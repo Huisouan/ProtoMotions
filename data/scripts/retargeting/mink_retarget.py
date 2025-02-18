@@ -397,7 +397,6 @@ def create_skeleton_motion(
 
     return SkeletonMotion.from_skeleton_state(new_sk_state, fps=mocap_fr)
 
-
 def retarget_motion(motion: SkeletonMotion, robot_type: str, render: bool = False):
     global_translations = motion.global_translation.numpy()
     pose_quat_global = motion.global_rotation.numpy()
@@ -609,7 +608,7 @@ def manually_retarget_motion(
         joint_names.index(q) for q in mujoco_joint_names if q in joint_names
     ]
     batch_size = motion_data["pose_aa"].shape[0]
-
+    '''
     pose_aa = np.concatenate(
         [
             motion_data["pose_aa"][:, :66],
@@ -617,6 +616,7 @@ def manually_retarget_motion(
         ],
         axis=-1,
     )
+    '''
     pose_aa_mj = pose_aa.reshape(batch_size, 52, 3)[:, smpl_2_mujoco]
     pose_quat = (
         sRot.from_rotvec(pose_aa_mj.reshape(-1, 3)).as_quat().reshape(batch_size, 52, 4)
@@ -694,4 +694,9 @@ def manually_retarget_motion(
 
 
 if __name__ == "__main__":
-    typer.run(manually_retarget_motion)
+    typer.run(manually_retarget_motion(
+        amass_data="data/HumanEva/S1/Box_1_poses.npz",
+        output_path="data/motions/punch.npy",
+        robot_type="h1",
+        render=True,
+    ))

@@ -1,0 +1,87 @@
+# @package _global_
+
+defaults:
+  - base
+
+robot:
+  body_names: ['base', 'FL_hip', 'FR_hip','RL_hip','RR_hip','FL_thigh','FR_thigh','RL_thigh','RR_thigh','FL_calf','FR_calf','RL_calf','RR_calf']
+  dof_names: ['joint_base','FL_hip_joint','FR_hip_joint','RL_hip_joint','RR_hip_joint','FL_thigh_joint','FR_thigh_joint','RL_thigh_joint','RR_thigh_joint','FL_calf_joint','FR_calf_joint','RL_calf_joint','RR_calf_joint']
+
+  trackable_bodies_subset: ['base', 'FL_hip', 'FR_hip','RL_hip','RR_hip','FL_thigh','FR_thigh','RL_thigh','RR_thigh','FL_calf','FR_calf','RL_calf','RR_calf']
+
+  # Observation parameters
+  dof_obs_size: ${eval:${len:${.dof_body_ids}}*6}
+  number_of_actions: 12
+  self_obs_max_coords_size: 373  # ${eval:1+25*(3+6+3+3)-3}
+
+  # Control parameters
+  dof_body_ids: [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11]
+  dof_effort_limits: [200., 200., 200., 300., 40., 200., 200., 200., 300., 40., 200., 40., 40., 18., 18., 40., 40., 18., 18.]
+  key_bodies: ['FL_calf','FR_calf','RL_calf','RR_calf']
+  non_termination_contact_bodies: [ 'FL_calf','FR_calf','RL_calf','RR_calf']
+  left_foot_name: null
+  right_foot_name: null
+  head_body_name: null
+  
+  init_state:
+    pos: [ 0.0, 0.0, 0.4 ] # x,y,z [m]
+    default_joint_angles: # = target angles [rad] when action = 0.0
+      "FL_hip_joint": 0.0,
+      "FR_hip_joint": 0.0,
+      "RL_hip_joint": 0.0,
+      "RR_hip_joint": 0.0,
+      "FL_thigh_joint": 0.8,
+      "FR_thigh_joint": 0.8,
+      "RL_thigh_joint": 1.0,
+      "RR_thigh_joint": 1.0,
+      "FL_calf_joint": -1.5,
+      "FR_calf_joint": -1.5,
+      "RL_calf_joint": -1.5,
+      "RR_calf_joint": -1.5,
+
+  control:
+    control_type: proportional
+    # action scale: target angle = actionScale * action + defaultAngle
+    action_scale: 1.
+    clamp_actions: 100.0
+
+  asset:
+    collapse_fixed_joints: False # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
+    replace_cylinder_with_capsule: True
+    flip_visual_attachments: False
+    armature: 0.
+    thickness: 0.01
+    max_angular_velocity: 1000.
+    max_linear_velocity: 1000.
+    density: 0.001
+    angular_damping: 0.
+    linear_damping: 0.
+
+    asset_file_name: "urdf/h1.urdf"
+    robot_type: go2
+    self_collisions: False
+    default_dof_drive_mode: 3
+
+  sim:
+    isaacgym:
+      fps: 200
+      decimation: 4
+      substeps: 1
+    isaaclab:
+      fps: 200
+      decimation: 4
+    genesis:
+      fps: 200
+      decimation: 4
+      substeps: 1
+
+
+# Override motion lib default to use the adapted H1 variant
+motion_lib:
+  _target_: protomotions.utils.motion_lib_h1.H1_MotionLib
+
+# Override simulation config to use the adapted H1 variant
+env:
+  config:
+    mimic_reset_track:
+      grace_period: 10
