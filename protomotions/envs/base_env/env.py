@@ -582,7 +582,7 @@ class BaseEnv:
         termination_height = self.config.termination_height
 
         termination_heights = np.array([termination_height] * self.simulator.num_bodies)
-
+        
         head_id = self.config.robot.body_names.index(self.config.robot.head_body_name)
 
         termination_heights[head_id] = max(

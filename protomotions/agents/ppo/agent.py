@@ -50,6 +50,7 @@ from protomotions.agents.common.common import weight_init, get_params
 from protomotions.envs.base_env.env import BaseEnv
 from protomotions.utils.running_mean_std import RunningMeanStd
 from rich.progress import track
+from rich.table import Table
 from protomotions.agents.ppo.utils import discount_values, bounds_loss
 
 log = logging.getLogger(__name__)
@@ -617,12 +618,14 @@ class PPO:
             "rewards/extra_rewards": self.experience_buffer.extra_rewards.mean().item(),
             "rewards/total_rewards": self.experience_buffer.total_rewards.mean().item(),
         }
+        
         env_log_dict = self.episode_env_tensors.mean_and_clear()
         env_log_dict = {f"env/{k}": v for k, v in env_log_dict.items()}
         if len(env_log_dict) > 0:
             log_dict.update(env_log_dict)
         log_dict.update(training_log_dict)
-        self.fabric.log_dict(log_dict)
+        self.fabric.log_dict(log_dict, self.current_epoch)
+
 
     # -----------------------------
     # Helper Functions

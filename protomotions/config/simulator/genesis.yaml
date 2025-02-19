@@ -12,3 +12,4 @@ simulator:
       fps: ${robot.sim.genesis.fps}
       decimation: ${robot.sim.genesis.decimation}
       substeps: ${robot.sim.genesis.substeps}
+      show_fps: ${robot.sim.genesis.show_fps}

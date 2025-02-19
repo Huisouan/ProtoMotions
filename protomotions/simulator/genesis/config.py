@@ -6,7 +6,7 @@ from protomotions.simulator.base_simulator.config import SimParams, SimulatorCon
 class GenesisSimParams(SimParams):
     """Genesis-specific simulation parameters."""
     substeps: int
-
+    show_fps: bool
 
 @dataclass
 class GenesisSimulatorConfig(SimulatorConfig):

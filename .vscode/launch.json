@@ -1,0 +1,64 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug train_agent.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/train_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+exp=steering_mlp",
+                "+robot=go2",
+                "+simulator=genesis",
+                "+experiment_name=go2_steering_mlp",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug eval_agent.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/eval_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+robot=${input:robot}",
+                "+simulator=${input:simulator}",
+                "motion_file=${input:motion_file}",
+                "checkpoint=results/${input:experiment_name}/last.ckpt"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "inputs": [
+                {
+                    "id": "robot",
+                    "type": "promptString",
+                    "description": "Enter robot type (e.g. go2)"
+                },
+                {
+                    "id": "simulator",
+                    "type": "promptString",
+                    "description": "Enter simulator type (e.g. genesis)"
+                },
+                {
+                    "id": "motion_file",
+                    "type": "promptString",
+                    "description": "Enter path to motion file"
+                },
+                {
+                    "id": "experiment_name",
+                    "type": "promptString",
+                    "description": "Enter experiment name"
+                }
+            ]
+        }
+
+    ]
+}

@@ -25,6 +25,12 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import os
+import sys
+
+print("Current working directory:", os.getcwd())
+print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
+print("sys.path:", sys.path)
 
 import os
 
@@ -69,7 +75,7 @@ from protomotions.agents.ppo.agent import PPO  # noqa: E402
 log = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="config", config_name="base")
+@hydra.main(config_path="config", config_name="base",version_base = '1.1')
 def main(config: OmegaConf):
     # resolve=False is important otherwise overrides
     # at inference time won't work properly

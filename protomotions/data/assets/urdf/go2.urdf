@@ -27,7 +27,7 @@ Stephen Brawner (brawner@gmail.com)
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="../mesh/过喔/base.dae" />
+          filename="../mesh/go2/base.dae" />
       </geometry>
       <material
         name="">

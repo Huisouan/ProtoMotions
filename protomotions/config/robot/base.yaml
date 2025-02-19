@@ -76,6 +76,7 @@ robot:
       fps: 60
       decimation: 2
       substeps: 2
+      show_fps: False
 
 motion_lib:
   _target_: protomotions.utils.motion_lib.MotionLib
