@@ -91,8 +91,7 @@ class GenesisSimulator(Simulator):
                 camera_lookat=(0.0, 0.0, 2.0),
                 camera_fov=40,
             ),
-            #show_viewer=not self.headless,
-            show_viewer=True,
+            show_viewer=not self.headless,
             vis_options=gs.options.VisOptions(
                 show_world_frame = True, # visualize the coordinate frame of `world` at its origin
                 world_frame_size = 1.0, # length of the world frame in meter
