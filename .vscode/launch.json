@@ -10,11 +10,11 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "args": [
-                "+exp=full_body_tracker/mlp_flat_terrain",
+                "+exp=ase_mlp",
                 "+robot=go2",
                 "+simulator=genesis",
-                "+experiment_name=go2_full_body_track",
-                "motion_file=data/motions/dog_fast_run_02_004_worldpos.npy"
+                "+experiment_name=go2_ase",
+                "motion_file=data/motions/go2/go2_motions.yaml"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"

@@ -1,0 +1,49 @@
+motions:
+  # 保持连续递增索引结构
+  - file: "dog_fast_run_02_004_worldpos.npy"
+    fps: 30
+    idx: 0  # 起始索引归零
+    sub_motions:
+      - idx: 0  # 必须与主索引一致
+        weight: 1
+        timings: {start: 0, end: -1}
+        ref_respawn_offset: 8
+        labels: ["fast_run", "quadruped", "cyclic"]
+
+  - file: "dog_fast_run_02_005_worldpos.npy" 
+    fps: 30
+    idx: 1  # 连续递增
+    sub_motions:
+      - idx: 1  # 同步递增
+        weight: 1
+        timings: {start: 0, end: -1}
+        labels: ["sprint", "ground"].
+
+  - file: "dog_quad_run_001_worldpos.npy"
+    fps: 60
+    idx: 2
+    sub_motions:
+      - idx: 2
+        weight: 1
+        timings: {start: 0, end: -1}
+        ref_respawn_offset: 12
+        labels: ["quad_run", "dynamic"]
+
+  - file: "dog_quad_walkrun_006_worldpos.npy"
+    fps: 24
+    idx: 3
+    sub_motions:
+      - idx: 3
+        weight: 1
+        timings: {start: 0, end: -1}
+        labels: ["walk-run_transition"]
+
+  - file: "dog_zig_walk_002_worldpos.npy"
+    fps: 30
+    idx: 4
+    sub_motions:
+      - idx: 4
+        weight: 1
+        timings: {start: 0, end: -1}
+        ref_respawn_offset: 6
+        labels: ["zigzag_walk", "irregular"]
