@@ -10,10 +10,11 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "args": [
-                "+exp=steering_mlp",
+                "+exp=full_body_tracker/mlp_flat_terrain",
                 "+robot=go2",
                 "+simulator=genesis",
-                "+experiment_name=go2_steering_mlp",
+                "+experiment_name=go2_full_body_track",
+                "motion_file=data/motions/dog_fast_run_02_004_worldpos.npy"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
@@ -27,38 +28,12 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "args": [
-                "+robot=${input:robot}",
-                "+simulator=${input:simulator}",
-                "motion_file=${input:motion_file}",
-                "checkpoint=results/${input:experiment_name}/last.ckpt"
+                "+robot=go2",
+                "+simulator=genesis",
+                "+checkpoint=results/go2_full_body_track/score_based.ckpt"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
-        },
-        {
-            "inputs": [
-                {
-                    "id": "robot",
-                    "type": "promptString",
-                    "description": "Enter robot type (e.g. go2)"
-                },
-                {
-                    "id": "simulator",
-                    "type": "promptString",
-                    "description": "Enter simulator type (e.g. genesis)"
-                },
-                {
-                    "id": "motion_file",
-                    "type": "promptString",
-                    "description": "Enter path to motion file"
-                },
-                {
-                    "id": "experiment_name",
-                    "type": "promptString",
-                    "description": "Enter experiment name"
-                }
-            ]
         }
-
     ]
 }

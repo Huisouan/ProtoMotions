@@ -7,7 +7,7 @@ robot:
   body_names: ['base', 'FL_hip', 'FR_hip','RL_hip','RR_hip','FL_thigh','FR_thigh','RL_thigh','RR_thigh','FL_calf','FR_calf','RL_calf','RR_calf']
   dof_names: ['FL_hip_joint','FR_hip_joint','RL_hip_joint','RR_hip_joint','FL_thigh_joint','FR_thigh_joint','RL_thigh_joint','RR_thigh_joint','FL_calf_joint','FR_calf_joint','RL_calf_joint','RR_calf_joint']
 
-  trackable_bodies_subset: ['base', 'FL_hip', 'FR_hip','RL_hip','RR_hip','FL_thigh','FR_thigh','RL_thigh','RR_thigh','FL_calf','FR_calf','RL_calf','RR_calf']
+  trackable_bodies_subset: ['base','FL_calf','FR_calf','RL_calf','RR_calf']
 
   # Observation parameters
   dof_obs_size: ${eval:${len:${.dof_body_ids}}*6}
@@ -15,7 +15,7 @@ robot:
   self_obs_max_coords_size: 193  # ${eval:1+12*(3+6+3+3)-3}
 
   # Control parameters
-  dof_body_ids: [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11]
+  dof_body_ids: [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12]
   dof_effort_limits: [40.,40.,40.,40.,40.,40.,40.,40.,40.,40.,40.,40.]
   key_bodies: ['FL_calf','FR_calf','RL_calf','RR_calf']
   non_termination_contact_bodies: [ 'FL_calf','FR_calf','RL_calf','RR_calf']
@@ -91,3 +91,6 @@ env:
   config:
     mimic_reset_track:
       grace_period: 10
+    humanoid_obs:
+      local_root_obs: False
+
