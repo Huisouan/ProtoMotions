@@ -87,6 +87,7 @@ def exp_tracking_reward(
     rv_rew = (
         (rv - ref_rv).pow(2).mean(-1).mul(config.component_coefficients.rv_rew_c).exp()
     )
+    
     rav_rew = (
         (rav - ref_rav)
         .pow(2)

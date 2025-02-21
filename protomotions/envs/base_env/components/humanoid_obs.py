@@ -38,6 +38,47 @@ from protomotions.envs.base_env.env_utils.general import HistoryBuffer
 
 
 class HumanoidObs(BaseComponent):
+
+    """人形机器人观测系统组件，继承自BaseComponent，包含以下核心方法：
+    
+    函数名及功能说明：
+    __init__(config, env)              
+    - 功能：初始化观测组件，创建观测张量/历史缓冲区/身体接触记录
+    - 参数：config(配置对象), env(环境实例)
+
+    post_physics_step()                
+    - 功能：物理模拟后旋转历史缓冲区指针（准备存储新数据）
+
+    reset_envs(env_ids, reset_default_env_ids, reset_ref_env_ids, reset_ref_motion_ids, reset_ref_motion_times)
+    - 功能：多环境重置入口，根据环境ID类型分发重置逻辑
+    - 参数：env_ids(需重置的环境ID), reset_default_env_ids(默认环境ID), reset_ref_env_ids(参考环境ID),
+            reset_ref_motion_ids(参考动作ID), reset_ref_motion_times(参考动作时间)
+
+    reset_hist_buf(env_ids, reset_default_env_ids, reset_ref_env_ids, reset_ref_motion_ids, reset_ref_motion_times)
+    - 功能：历史缓冲区重置路由，根据环境类型调用对应重置方法
+
+    reset_hist_default(env_ids)         
+    - 功能：用当前观测初始化默认环境的历史缓冲区
+    - 参数：env_ids(需重置的环境ID)
+
+    reset_hist_ref(env_ids, motion_ids, motion_times)
+    - 功能：从运动库加载参考动作数据初始化历史缓冲区
+    - 参数：env_ids(环境ID), motion_ids(动作ID列表), motion_times(动作时间戳)
+
+    compute_observations(env_ids)       
+    - 功能：计算当前环境观测值（支持两种模式）
+    - 参数：env_ids(需计算的环境ID)
+    - 模式：use_max_coords_obs配置项切换观测计算方式
+
+    build_self_obs_demo(motion_ids, motion_times0, num_steps)
+    - 功能：构建示范观测数据（用于模仿学习等场景）
+    - 参数：motion_ids(动作ID), motion_times0(起始时间), num_steps(时间步数)
+    - 返回：观测张量 obs_demo
+
+    get_obs()                           
+    - 功能：获取当前帧和历史观测的合并数据
+    - 返回：包含"self_obs"和"historical_self_obs"的字典
+    """
     def __init__(self, config, env):
         super().__init__(config, env)
         self.humanoid_obs = torch.zeros(
