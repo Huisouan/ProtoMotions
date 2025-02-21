@@ -284,26 +284,47 @@ def compute_humanoid_reset(
     enable_early_termination: bool,
     termination_heights: Tensor,
 ) -> Tuple[Tensor, Tensor]:
+    """计算人形机器人环境的重置标志和终止标志
+    
+    Args:
+        reset_buf: 重置缓冲区，用于标记需要重置的环境实例
+        progress_buf: 进度缓冲区，记录每个环境实例的当前时间步
+        contact_buf: 接触力缓冲区，存储各刚体接触力信息
+        non_termination_contact_body_ids: 不会导致终止的刚体ID集合
+        rigid_body_pos: 刚体位置信息，形状为(..., 3)的tensor
+        max_episode_length: 单次训练回合的最大时间步长度
+        enable_early_termination: 是否启用提前终止的布尔标志
+        termination_heights: 各刚体对应触发终止的最低高度阈值
+    
+    Returns:
+        Tuple[Tensor, Tensor]: 包含重置标志和终止标志的元组
+    """
+
     terminated = torch.zeros_like(reset_buf)
 
     if enable_early_termination:
+        # 屏蔽非终止接触刚体的接触力数据
         masked_contact_buf = contact_buf.clone()
         masked_contact_buf[:, non_termination_contact_body_ids, :] = 0
+        
+        # 检测超过阈值的有效接触（判断是否发生碰撞）
         fall_contact = torch.any(torch.abs(masked_contact_buf) > 0.1, dim=-1)
         fall_contact = torch.any(fall_contact, dim=-1)
 
+        # 检测刚体高度低于终止阈值（判断是否倒地）
         body_height = rigid_body_pos[..., 2]
         fall_height = body_height < termination_heights
-        fall_height[:, non_termination_contact_body_ids] = False
+        fall_height[:, non_termination_contact_body_ids] = False  # 排除非终止检测刚体
         fall_height = torch.any(fall_height, dim=-1)
 
+        # 组合碰撞接触和高度条件作为摔倒判定
         has_fallen = torch.logical_and(fall_contact, fall_height)
 
-        # first timestep can sometimes still have nonzero contact forces
-        # so only check after first couple of steps
+        # 忽略前两个时间步的接触检测（避免初始状态误判）
         has_fallen *= progress_buf > 1
         terminated = torch.where(has_fallen, torch.ones_like(reset_buf), terminated)
 
+    # 组合终止条件：达到最大时间步或摔倒终止
     reset = torch.where(
         progress_buf >= max_episode_length - 1, torch.ones_like(reset_buf), terminated
     )

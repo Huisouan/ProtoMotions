@@ -94,3 +94,7 @@ env:
     humanoid_obs:
       local_root_obs: False
 
+    termination_height: 0.1
+    head_termination_height: 0.2
+    enable_height_termination: True
+

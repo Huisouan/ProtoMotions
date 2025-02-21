@@ -30,7 +30,7 @@
             "args": [
                 "+robot=go2",
                 "+simulator=genesis",
-                "+checkpoint=results/go2_full_body_track/score_based.ckpt"
+                "+checkpoint=results/go2_ase/last.ckpt"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
