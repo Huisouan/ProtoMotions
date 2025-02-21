@@ -34,6 +34,34 @@
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Play motions",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/eval_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+base=[fabric,structure]",
+                "+exp=mimic",
+                "+opt=wandb",
+                "+robot=go2",
+                "+simulator=genesis",
+                "+checkpoint=null",
+                "+training_max_steps=1",
+                "+motion_file=data/motions/go2/go2_motions.yaml",
+                "env.config.sync_motion=True",
+                "ref_respawn_offset=0",
+                "+headless=False",
+                "+num_envs=1",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         }
+        
+
     ]
+
 }
