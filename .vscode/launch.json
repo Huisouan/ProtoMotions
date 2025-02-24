@@ -2,7 +2,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug train_agent.py",
+            "name": "Debug Full_tracker",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/train_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+exp=full_body_tracker/mlp_flat_terrain.yaml",
+                "+robot=go2",
+                "+simulator=genesis",
+                "+experiment_name=full_body_tracker",
+                "motion_file=data/motions/go2/go2_motions.yaml"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug ASE",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/protomotions/train_agent.py",
@@ -19,6 +37,25 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         },
+        {
+            "name": "Debug Pathfollower",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/train_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+exp=path_follower_amp_mlp.yaml",
+                "+robot=go2",
+                "+simulator=genesis",
+                "+experiment_name=path_follower_amp_mlp",
+                "motion_file=data/motions/go2/go2_motions.yaml"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+
         {
             "name": "Debug eval_agent.py",
             "type": "python",

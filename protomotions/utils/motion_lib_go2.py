@@ -32,7 +32,7 @@ import torch
 from easydict import EasyDict
 
 from protomotions.utils.motion_lib import MotionLib
-
+from isaac_utils.rotations import wxyz_to_xyzw
 
 class Go2_MotionLib(MotionLib):
     def __init__(
@@ -73,9 +73,16 @@ class Go2_MotionLib(MotionLib):
             persistent=False,
         )
 
+        
+        
+        
     @staticmethod
     def _load_motion_file(motion_file):
         motion = EasyDict(torch.load(motion_file))
+        # Convert wxyz to xyzw
+        motion["global_rotation"] = wxyz_to_xyzw(motion["global_rotation"])
+        motion["local_rotation"] = wxyz_to_xyzw(motion["local_rotation"])
+        
         return motion
 
     def _compute_motion_dof_vels(self, motion):
