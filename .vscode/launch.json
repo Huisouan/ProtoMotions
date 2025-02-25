@@ -73,6 +73,22 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Play Full_tracker.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/eval_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+robot=go2",
+                "+simulator=genesis",
+                "+checkpoint=results/full_body_tracker/last.ckpt"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "Play motions",
             "type": "python",
             "request": "launch",

@@ -206,49 +206,53 @@ class MimicMotionManager(MotionManager):
 
     def update_dynamic_stats(self):
         """
-        Update dynamic statistics for motion sampling based on performance.
-        This method is crucial for adaptive sampling strategies.
+        更新运动采样动态统计信息，用于自适应采样策略优化
+        
+        方法说明:
+        - 根据环境交互结果动态更新运动样本的统计信息
+        - 通过将失败样本分配到时间分桶(bucket)中进行统计分析
+        - 使用scatter_add操作实现高效的分桶统计更新
+        
+        触发条件:
+        - 需开启dynamic_sampling配置项
+        - 环境未处于禁用重置状态时执行
         """
         if not self.config.dynamic_sampling.enabled:
             return
         if self.env.disable_reset:
             return
 
-        # Only update stats for motions that failed on flat terrain
+        # 处理在平地上失败的运动样本
         if torch.any(self.envs_tracked_for_dynamic_sampling):
-            # Extract relevant data for motions that failed on and are valid for over-sampling
+            # 提取有效失败样本的元数据
             valid_motion_ids = self.motion_ids[self.envs_tracked_for_dynamic_sampling]
             valid_motion_times = self.motion_times[
                 self.envs_tracked_for_dynamic_sampling
             ]
 
-            # Get performance metrics for failed motions
+            # 获取失败样本的性能指标（基于奖励机制判断失败原因）
             valid_failed_due_bad_reward = self.dynamic_sampling_tracked_failures[
                 self.envs_tracked_for_dynamic_sampling
             ]
 
-            # Determine bucket indices for the failed motions
+            # 处理固定运动ID的特殊情况（所有分桶归为同一运动）
             if self.config.fixed_motion_id is not None:
-                # If using a fixed motion, all buckets correspond to that motion
                 valid_motion_ids = torch.zeros_like(valid_motion_ids)
 
-            # Calculate the exact bucket for each motion
+            # 计算分桶索引：基于运动ID的基准偏移 + 时间窗口偏移
             base_offsets = self.bucket_offsets[valid_motion_ids]
             extra_offsets = torch.floor(
                 valid_motion_times / self.config.dynamic_sampling.bucket_width
             ).long()
             bucket_indices = base_offsets + extra_offsets
 
-            # NOTE These two lines
-            # self.bucket_frames_spent[bucket_indices] += 1
-            # self.bucket_scores[bucket_indices] += self.rew_buf
-            # are NOT what we want, see https://discuss.pytorch.org/t/how-to-do-atomic-add-on-slice-with-duplicate-indices/136193
-
+            # 使用原子操作更新分桶统计信息
+            # 累加分桶持续时间（每个分桶花费的帧数统计）
             self.bucket_frames_spent.scatter_add_(
                 0, bucket_indices, torch.ones_like(bucket_indices)
             )
 
-            # Update bucket scores
+            # 累加分桶失败分数（基于奖励机制的失败原因统计）
             self.bucket_scores.scatter_add_(
                 0, bucket_indices, valid_failed_due_bad_reward
             )
@@ -258,6 +262,30 @@ class MimicMotionManager(MotionManager):
         Refresh dynamic weights for motion sampling.
         This method updates the dynamic weights based on the performance metrics of the sampled motions.
         It ensures that more challenging motions are sampled more frequently.
+        """
+        """
+        动态刷新运动采样权重，实现基于表现的自适应采样策略
+
+        方法功能:
+        - 根据分桶(bucket)的历史表现数据，周期性更新运动采样权重
+        - 通过指数加权调整困难样本的采样概率
+        - 记录关键指标用于性能分析
+
+        参数说明:
+        current_epoch -- 当前训练周期数，用于控制权重更新频率
+
+        核心逻辑:
+        1. 更新条件检测：每N个epoch执行更新（N由配置参数update_dynamic_weight_epochs控制）
+        2. 计算分桶平均得分：基于分桶的累计得分和访问帧数
+        3. 权重更新公式：weight = (平均得分^指数) + 历史权重*0.7（实现平滑过渡）
+        4. 权重限制：确保权重不低于最小阈值，避免完全丢弃困难样本
+        5. 指标记录：将分桶的帧数、得分、权重等统计量写入日志系统
+        6. 统计量重置：清空当前统计周期数据，准备下个周期的收集
+
+        设计特点:
+        - 引入指数参数(dynamic_weight_pow)控制困难样本的放大强度
+        - 采用30%历史权重保留的平滑策略，防止权重突变
+        - 通过_min_bucket_weight保障基础采样概率
         """
         if not (
             self.config.dynamic_sampling.enabled

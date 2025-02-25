@@ -189,7 +189,7 @@ class HumanoidObs(BaseComponent):
             root_rot = current_state.rigid_body_rot[:, 0, :]
             root_vel = current_state.rigid_body_vel[:, 0, :]
             root_ang_vel = current_state.rigid_body_ang_vel[:, 0, :]
-            key_body_pos = current_state.rigid_body_pos[:, self.env.simulator.key_body_ids, :]
+            key_body_pos = current_state.rigid_body_pos[:, self.env.key_body_ids, :]
 
             obs = compute_humanoid_observations(
                 root_pos,

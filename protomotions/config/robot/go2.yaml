@@ -12,7 +12,7 @@ robot:
   # Observation parameters
   dof_obs_size: ${eval:${len:${.dof_body_ids}}*6}
   number_of_actions: 12
-  self_obs_max_coords_size: 193  # ${eval:1+12*(3+6+3+3)-3}
+  self_obs_max_coords_size: 109  # ${eval:1+13*(3+6+3+3)-3}
 
   # Control parameters
   dof_body_ids: [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12]
@@ -46,16 +46,16 @@ robot:
     action_scale: 1.
     clamp_actions: 100.0
     stiffness:
-      joint: 20
+      joint: 25
     damping:
-      joint: 2
+      joint: 0.5
 
   asset:
     collapse_fixed_joints: False # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     replace_cylinder_with_capsule: True
     flip_visual_attachments: False
     armature: 0.
-    thickness: 0.01
+    thickness: null
     max_angular_velocity: 1000.
     max_linear_velocity: 1000.
     density: 0.001
@@ -92,6 +92,7 @@ env:
       grace_period: 10
     humanoid_obs:
       local_root_obs: False
+      use_max_coords_obs: False
 
     termination_height: 0.1
     head_termination_height: 0.2
