@@ -144,7 +144,7 @@ class HumanoidObs(BaseComponent):
         motion_times = motion_times.view(-1).clamp(min=0)
 
         ref_state = self.env.motion_lib.get_motion_state(motion_ids, motion_times)
-
+        
         obs_ref = compute_humanoid_observations_max(
             ref_state.rigid_body_pos,
             ref_state.rigid_body_rot,

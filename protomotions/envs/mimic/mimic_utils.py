@@ -37,9 +37,26 @@ from isaac_utils import torch_utils, rotations
 
 @torch.jit.script
 def mul_exp_mean(x: Tensor, coef: float, mean_before_exp: bool):
+    """
+    对输入张量进行乘系数、指数和均值操作的组合计算
+    
+    根据mean_before_exp参数选择不同的计算顺序：
+    - 当mean_before_exp=True时，先计算最后一个维度的均值，再进行乘系数和指数运算
+    - 当mean_before_exp=False时，先进行乘系数和指数运算，再计算最后一个维度的均值
+
+    Args:
+        x (Tensor): 输入张量，至少包含一个维度
+        coef (float): 乘数系数，在指数运算前与张量相乘的缩放因子
+        mean_before_exp (bool): 布尔标志，控制均值计算在指数运算前还是后进行
+    
+    Returns:
+        Tensor: 经过组合计算后的输出张量。若mean_before_exp=True时维度会比输入减少一维
+    """
     if mean_before_exp:
+        # 计算路径：均值 -> 乘系数 -> 指数
         return x.mean(-1).mul(coef).exp()
     else:
+        # 计算路径：乘系数 -> 指数 -> 均值
         return x.mul(coef).exp().mean(-1)
 
 

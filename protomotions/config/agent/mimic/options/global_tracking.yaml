@@ -7,14 +7,14 @@ env:
         gr_rew_w: 0.3
         lr_rew_w: 0
         gt_rew_w: 0.5
-        rt_rew_w: 0
-        rv_rew_w: 0
+        rt_rew_w: 0.5
+        rv_rew_w: 0.3
         rav_rew_w: 0
         gv_rew_w: 0.1
         gav_rew_w: 0.1
         kb_rew_w: 0
         dv_rew_w: 0.0
-        rh_rew_w: 0.2
+        rh_rew_w: 0.4
         pow_rew_w: 0.00001
 
       component_coefficients:

@@ -16,7 +16,7 @@ robot:
 
   # Control parameters
   dof_body_ids: [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12]
-  dof_effort_limits: [40.,40.,40.,40.,40.,40.,40.,40.,40.,40.,40.,40.]
+  dof_effort_limits: [100.,100.,100.,100.,100.,100.,100.,100.,100.,100.,100.,100.]
   key_bodies: ['FL_calf','FR_calf','RL_calf','RR_calf']
   non_termination_contact_bodies: [ 'FL_calf','FR_calf','RL_calf','RR_calf']
   left_foot_name: null
