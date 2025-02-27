@@ -38,7 +38,7 @@ class VQVAEEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self._encoder: MultiHeadedMLP = instantiate(self.config.encoder)
+        self._encoder: MultiHeadedMLP = instantiate(self.config.enc)
         self._codebook: nn.Embedding = nn.Embedding(
             self.config.num_embeddings, self.config.embedding_dim
         )
@@ -47,7 +47,7 @@ class VQVAEEncoder(nn.Module):
             -1.0 / self.config.num_embeddings, 
             1.0 / self.config.embedding_dim
         )
-        
+
     def forward(self, input_dict):
         # 前向传播完整实现
         z = self._encoder(input_dict)  # 获取编码输出
@@ -69,11 +69,13 @@ class VQVAEEncoder(nn.Module):
         codebook_loss = torch.mean((quantized.detach() - z)**2)
         commitment_loss = torch.mean((quantized - z.detach())**2)
         vq_loss = codebook_loss + commitment_loss
-        return {
-            'quantized': quantized.view_as(z),
-            'vq_loss': vq_loss,
-            'encoding_indices': encoding_indices
-        }
+
+        # 将输出合并到输入字典（保持原始数据流）
+        input_dict.update({
+            'latent_obs': quantized.view_as(z),  # 量化后的潜在特征
+            'vq_loss': vq_loss,                  # VQ总损失项
+        })
+        return input_dict
 
 class VQVAEDecoder(nn.Module):
     def __init__(self, config, num_out: int):
@@ -91,15 +93,16 @@ class VQVAEDecoder(nn.Module):
         dist = distributions.Normal(mu, std)
         return dist
 
-class VQVAEactor(nn.Module):
+class VQVAEActor(nn.Module):
     def __init__(self, config, num_out: int):
         super().__init__()
-        self._encoder: VQVAEEncoder = instantiate(config.encoder)
+        self.config = config
+        self._encoder: VQVAEEncoder = instantiate(self.config.encoder)
         
-        self._decoder: VQVAEDecoder = instantiate(config.decoder)
+        self._decoder: VQVAEDecoder = instantiate(self.config.decoder)
     def forward(self, input_dict):
-        encoder_out = self._encoder(input_dict)
-        decoder_out = self._decoder(input_dict,encoder_out)
+        input_dict = self._encoder(input_dict)
+        decoder_out = self._decoder(input_dict)
         return decoder_out
 
 
@@ -109,34 +112,10 @@ class VQVAEModel(PPOModel):
         self.config = config
 
         # create networks
-        self._actor:VQVAEactor  = instantiate(
+        self._actor:VQVAEActor  = instantiate(
             self.config.actor,
         )
         self._critic: MultiHeadedMLP = instantiate(
             self.config.critic,
         )
         
-    def get_action_and_value(self, input_dict: dict):
-        dist = self._actor(input_dict)
-        action = dist.sample()
-        value = self._critic(input_dict).flatten()
-
-        logstd = self._actor.logstd
-        std = torch.exp(logstd)
-
-        neglogp = self.neglogp(action, dist.mean, std, logstd)
-        return action, neglogp, value.flatten()
-
-    def act(self, input_dict: dict, mean: bool = True) -> torch.Tensor:
-        dist = self._actor(input_dict)
-        if mean:
-            return dist.mean
-        return dist.sample()
-
-    @staticmethod
-    def neglogp(x, mean, std, logstd):
-        return (
-            0.5 * (((x - mean) / std) ** 2).sum(dim=-1)
-            + 0.5 * np.log(2.0 * np.pi) * x.size()[-1]
-            + logstd.sum(dim=-1)
-        )

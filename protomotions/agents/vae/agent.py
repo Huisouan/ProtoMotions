@@ -75,7 +75,8 @@ class VQVAE(Mimic):
     # -----------------------------
     # Experience Buffer and Dataset Processing
     # -----------------------------
-
+    def register_extra_experience_buffer_keys(self):
+        self.experience_buffer.register_key("vq_loss")
     # -----------------------------
     # Reward Calculation
     # -----------------------------

@@ -1,0 +1,101 @@
+# @package _global_
+
+agent:
+  config:
+    # Setup basic actor-critic structure
+    model:
+      config:
+        actor:
+          _target_: protomotions.agents.vae.model.VQVAEActor
+          _recursive_: False
+          num_out: ${robot.number_of_actions}
+          config:
+            actor_logstd: -2.9
+            encoder:
+              _target_: protomotions.agents.vae.model.VQVAEEncoder
+              _recursive_: False
+              config:
+                num_embeddings: 256
+                embedding_dim: 32
+                enc:
+                  _target_: protomotions.agents.common.mlp.MultiHeadedMLP
+                  _recursive_: False
+                  config:
+                    num_out: ${robot.number_of_actions}
+                    input_models:
+                      self_obs:
+                        _target_: protomotions.agents.common.common.Flatten
+                        _recursive_: False
+                        num_in: ${robot.self_obs_size}
+                        num_out: ${.num_in}
+                        config:
+                          obs_key: self_obs
+                          normalize_obs: True
+                          norm_clamp_value: 5
+                      historical_self_obs:
+                        _target_: protomotions.agents.common.common.Flatten
+                        _recursive_: False
+                        num_in: ${eval:${robot.self_obs_size}*${env.config.humanoid_obs.num_historical_steps}}
+                        num_out: ${.num_in}
+                        config:
+                          obs_key: historical_self_obs
+                          normalize_obs: True
+                          norm_clamp_value: 5
+                    trunk:
+                      _target_: protomotions.agents.common.mlp.MLP
+                      _recursive_: False
+                      num_out: ${.embedding_dim}
+                      config:
+                        layers:
+                          - units: 1024
+                            activation: tanh
+                            use_layer_norm: false
+                          - units: 512
+                            activation: tanh
+                            use_layer_norm: false
+            decoder:
+              _target_: protomotions.agents.ppo.model.PPOActor
+              _recursive_: False
+              num_out: ${robot.number_of_actions}
+              config:
+                actor_logstd: -2.9
+                mu_model:
+                  _target_: protomotions.agents.common.mlp.MultiHeadedMLP
+                  _recursive_: False
+                  config:
+                    num_out: ${robot.number_of_actions}
+                    input_models:
+                      self_obs:
+                        _target_: protomotions.agents.common.common.Flatten
+                        _recursive_: False
+                        num_in: ${.embedding_dim}
+                        num_out: ${.num_in}
+                        config:
+                          obs_key: self_obs
+                          normalize_obs: True
+                          norm_clamp_value: 5
+                      latent_obs:
+                        _target_: protomotions.agents.common.common.Flatten
+                        _recursive_: False
+                        num_in: ${robot.number_of_actions}
+                        num_out: ${.num_in}
+                        config:
+                          obs_key: latent_obs
+                          normalize_obs: True
+                          norm_clamp_value: 5
+                    trunk:
+                      _target_: protomotions.agents.common.mlp.MLP
+                      _recursive_: False
+                      num_out: ${robot.number_of_actions}
+                      config:
+                        layers:
+                          - units: 1024
+                            activation: tanh
+                            use_layer_norm: false
+                          - units: 512
+                            activation: tanh
+                            use_layer_norm: false
+
+        actor_optimizer:
+          _target_: torch.optim.Adam
+          lr: 2e-5

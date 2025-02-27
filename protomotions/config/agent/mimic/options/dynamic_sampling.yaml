@@ -9,4 +9,4 @@ motion_manager:
   dynamic_sampling:
     enabled: True
     dynamic_weight_max: null
-    bucket_width: 2.0
+    bucket_width: 0.2
