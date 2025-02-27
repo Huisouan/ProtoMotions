@@ -118,7 +118,12 @@ class MimicMotionManager(MotionManager):
         self.bucket_offsets = rolled.cumsum(0)
 
         total_num_buckets = sum(num_buckets_list)
-
+        
+        self.num_buckets_per_motion = torch.tensor(
+            num_buckets_list, 
+            dtype=torch.long, 
+            device=self.env.device
+        )
         self.bucket_scores = torch.zeros(
             total_num_buckets, dtype=torch.float, device=self.env.device
         )
@@ -236,15 +241,30 @@ class MimicMotionManager(MotionManager):
             ]
 
             # 处理固定运动ID的特殊情况（所有分桶归为同一运动）
+            # 计算分桶索引时增加边界限制
             if self.config.fixed_motion_id is not None:
                 valid_motion_ids = torch.zeros_like(valid_motion_ids)
-
+            else:
+                # 获取每个运动对应的最大分桶索引
+                max_extra_offsets = self.num_buckets_per_motion[valid_motion_ids] - 1  # 每个运动的分桶数-1
             # 计算分桶索引：基于运动ID的基准偏移 + 时间窗口偏移
-            base_offsets = self.bucket_offsets[valid_motion_ids]
+            
+            base_offsets = self.bucket_offsets[valid_motion_ids]                
+            # 计算时间偏移时增加clamp限制
             extra_offsets = torch.floor(
                 valid_motion_times / self.config.dynamic_sampling.bucket_width
             ).long()
+            extra_offsets = torch.clamp(extra_offsets, max=max_extra_offsets)  # 关键修正
+            
             bucket_indices = base_offsets + extra_offsets
+
+            # 在scatter_add操作前添加验证
+            max_idx = self.bucket_frames_spent.shape[0] - 1
+            if (bucket_indices > max_idx).any():
+                invalid_indices = bucket_indices[bucket_indices > max_idx]
+                print(f"ERROR: 检测到非法分桶索引 {invalid_indices} (最大允许值={max_idx})")
+                raise IndexError("分桶索引越界")
+
 
             # 使用原子操作更新分桶统计信息
             # 累加分桶持续时间（每个分桶花费的帧数统计）

@@ -85,6 +85,7 @@ robot:
 # Override motion lib default to use the adapted H1 variant
 motion_lib:
   _target_: protomotions.utils.motion_lib_go2.Go2_MotionLib
+  fix_motion_heights: False
 # Override simulation config to use the adapted H1 variant
 env:
   config:
