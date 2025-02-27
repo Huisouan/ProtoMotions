@@ -94,7 +94,7 @@ env:
     humanoid_obs:
       local_root_obs: False
       use_max_coords_obs: False
-
+      num_historical_steps: 3
     termination_height: 0.1
     head_termination_height: 0.2
     enable_height_termination: True

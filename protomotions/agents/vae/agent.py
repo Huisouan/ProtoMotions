@@ -75,8 +75,7 @@ class VQVAE(Mimic):
     # -----------------------------
     # Experience Buffer and Dataset Processing
     # -----------------------------
-    def register_extra_experience_buffer_keys(self):
-        self.experience_buffer.register_key("vq_loss")
+
     # -----------------------------
     # Reward Calculation
     # -----------------------------
@@ -86,14 +85,13 @@ class VQVAE(Mimic):
     # -----------------------------
     
     def calculate_extra_actor_loss(self, batch_dict, dist) -> Tuple[Tensor, Dict]:
-        return torch.tensor(0.0, device=self.device), {}    
+        return batch_dict['vq_loss'], {
+            "perplexity": batch_dict["perplexity"].detach(),
+            "vq_loss": batch_dict["vq_loss"].detach(),
+            }    
 
     # -----------------------------
     # Termination and Logging
     # -----------------------------
     def terminate_early(self):
         self._should_stop = True
-
-    def post_epoch_logging(self, training_log_dict):
-        training_log_dict["rewards/amp_rewards"] = self.experience_buffer.amp_rewards.mean()
-        super().post_epoch_logging(training_log_dict)

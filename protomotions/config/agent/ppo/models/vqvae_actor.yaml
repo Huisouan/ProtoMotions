@@ -11,17 +11,18 @@ agent:
           num_out: ${robot.number_of_actions}
           config:
             actor_logstd: -2.9
+            latent_dim: 64
             encoder:
               _target_: protomotions.agents.vae.model.VQVAEEncoder
               _recursive_: False
               config:
                 num_embeddings: 256
-                embedding_dim: 32
+                embedding_dim: 8
                 enc:
                   _target_: protomotions.agents.common.mlp.MultiHeadedMLP
                   _recursive_: False
+                  num_out: ${....latent_dim}
                   config:
-                    num_out: ${robot.number_of_actions}
                     input_models:
                       self_obs:
                         _target_: protomotions.agents.common.common.Flatten
@@ -41,10 +42,19 @@ agent:
                           obs_key: historical_self_obs
                           normalize_obs: True
                           norm_clamp_value: 5
+                      mlp_mimic_target_pose_model:
+                        _target_: protomotions.agents.common.common.Flatten
+                        _recursive_: False
+                        num_in: ${eval:${env.config.mimic_target_pose.num_future_steps}*${env.config.mimic_target_pose.num_obs_per_target_pose}}
+                        num_out: ${.num_in}
+                        config:
+                          normalize_obs: True
+                          norm_clamp_value: 5
+                          obs_key: mimic_target_poses
                     trunk:
                       _target_: protomotions.agents.common.mlp.MLP
                       _recursive_: False
-                      num_out: ${.embedding_dim}
+                      num_out: ${......latent_dim}
                       config:
                         layers:
                           - units: 1024
@@ -53,22 +63,23 @@ agent:
                           - units: 512
                             activation: tanh
                             use_layer_norm: false
+        
             decoder:
-              _target_: protomotions.agents.ppo.model.PPOActor
+              _target_: protomotions.agents.vae.model.VQVAEDecoder
               _recursive_: False
               num_out: ${robot.number_of_actions}
               config:
-                actor_logstd: -2.9
                 mu_model:
                   _target_: protomotions.agents.common.mlp.MultiHeadedMLP
                   _recursive_: False
+                  num_out: ${robot.number_of_actions}
                   config:
                     num_out: ${robot.number_of_actions}
                     input_models:
                       self_obs:
                         _target_: protomotions.agents.common.common.Flatten
                         _recursive_: False
-                        num_in: ${.embedding_dim}
+                        num_in: ${robot.self_obs_size}
                         num_out: ${.num_in}
                         config:
                           obs_key: self_obs
@@ -77,7 +88,7 @@ agent:
                       latent_obs:
                         _target_: protomotions.agents.common.common.Flatten
                         _recursive_: False
-                        num_in: ${robot.number_of_actions}
+                        num_in: ${.......latent_dim}
                         num_out: ${.num_in}
                         config:
                           obs_key: latent_obs
@@ -99,3 +110,6 @@ agent:
         actor_optimizer:
           _target_: torch.optim.Adam
           lr: 2e-5
+    
+    extra_inputs:
+      historical_self_obs: true  # we create as a dict to ensure hydra combines with other extra_inputs

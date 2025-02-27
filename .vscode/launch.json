@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Debug Full_tracker",
             "type": "python",
@@ -14,6 +15,24 @@
                 "+robot=go2",
                 "+simulator=genesis",
                 "+experiment_name=full_body_tracker",
+                "motion_file=data/motions/go2/go2_motions.yaml"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug VQVAE_tracker",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/train_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+exp=full_body_tracker/vae_flat_terrain.yaml",
+                "+robot=go2",
+                "+simulator=genesis",
+                "+experiment_name=vqvae_body_tracker",
                 "motion_file=data/motions/go2/go2_motions.yaml"
             ],
             "console": "integratedTerminal",

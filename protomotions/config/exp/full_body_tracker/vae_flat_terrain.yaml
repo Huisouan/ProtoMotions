@@ -1,12 +1,11 @@
 # @package _global_
 
 defaults:
-  - /agent/mimic/agent
+  - /agent/mimic/agent_vae
   - /env/mimic
 
   - /agent/ppo/models/vqvae_actor
   - /agent/ppo/models/mlp_critic_large
-  - /agent/mimic/models/mlp_actor_target_pose
   - /agent/mimic/models/mlp_critic_target_pose
   # - /terrain/complex
   # - /agent/ppo/models/mlp_actor_terrain
