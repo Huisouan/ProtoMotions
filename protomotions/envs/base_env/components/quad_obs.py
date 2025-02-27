@@ -113,14 +113,14 @@ class HumanoidObs(BaseComponent):
     def reset_hist_buf(self, env_ids, reset_default_env_ids, reset_ref_env_ids, reset_ref_motion_ids, reset_ref_motion_times):
         if len(reset_default_env_ids) > 0:
             self.reset_hist_default(reset_default_env_ids)
-        """
+
         if len(reset_ref_env_ids) > 0:
             self.reset_hist_ref(
                 reset_ref_env_ids,
                 reset_ref_motion_ids,
                 reset_ref_motion_times,
             )
-        """
+
     def reset_hist_default(self, env_ids):
         self.humanoid_obs_hist_buf.set_hist(
             self.humanoid_obs_hist_buf.get_current(env_ids), env_ids=env_ids
@@ -189,7 +189,7 @@ class HumanoidObs(BaseComponent):
             root_rot = current_state.rigid_body_rot[:, 0, :]
             root_vel = current_state.rigid_body_vel[:, 0, :]
             root_ang_vel = current_state.rigid_body_ang_vel[:, 0, :]
-            key_body_pos = current_state.rigid_body_pos[:, self.env.key_body_ids, :]
+            key_body_pos = current_state.rigid_body_pos[:, self.env.simulator.key_body_ids, :]
 
             obs = compute_humanoid_observations(
                 root_pos,
