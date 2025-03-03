@@ -139,7 +139,6 @@ def compute_humanoid_observations(
     w_last: bool,
 ) -> Tensor:
     """计算人形机器人观测向量的函数
-    
     参数说明：
     root_pos: 根节点世界坐标系下的位置(x,y,z)，形状为(batch_size, 3)
     root_rot: 根节点世界坐标系下的四元数旋转，形状为(batch_size, 4)
