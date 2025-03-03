@@ -73,9 +73,6 @@ class Go2_MotionLib(MotionLib):
             persistent=False,
         )
 
-        
-        
-        
     @staticmethod
     def _load_motion_file(motion_file):
         motion = EasyDict(torch.load(motion_file))
