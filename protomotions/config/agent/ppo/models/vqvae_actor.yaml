@@ -17,7 +17,7 @@ agent:
               _recursive_: False
               config:
                 num_embeddings: 256
-                embedding_dim: 8
+                embedding_dim: 32
                 enc:
                   _target_: protomotions.agents.common.mlp.MultiHeadedMLP
                   _recursive_: False
@@ -58,10 +58,10 @@ agent:
                       config:
                         layers:
                           - units: 1024
-                            activation: tanh
+                            activation: elu
                             use_layer_norm: false
                           - units: 512
-                            activation: tanh
+                            activation: elu
                             use_layer_norm: false
         
             decoder:
@@ -101,12 +101,15 @@ agent:
                       config:
                         layers:
                           - units: 1024
-                            activation: tanh
+                            activation: elu
                             use_layer_norm: false
                           - units: 512
+                            activation: elu
+                            use_layer_norm: false
+                          - units: 256
                             activation: tanh
                             use_layer_norm: false
-
+                            
         actor_optimizer:
           _target_: torch.optim.Adam
           lr: 2e-5

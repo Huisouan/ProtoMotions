@@ -103,7 +103,7 @@
             "args": [
                 "+robot=go2",
                 "+simulator=genesis",
-                "+checkpoint=results/full_body_tracker/last.ckpt"
+                "+checkpoint=results/vqvae_body_tracker/last.ckpt"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
