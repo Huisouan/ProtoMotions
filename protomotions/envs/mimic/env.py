@@ -34,6 +34,7 @@ from isaac_utils import rotations, torch_utils
 from protomotions.envs.mimic.mimic_utils import (
     dof_to_local,
     exp_tracking_reward,
+    exp_tracking_quad_reward,
 )
 from protomotions.envs.base_env.env_utils.humanoid_utils import quat_diff_norm
 from protomotions.simulator.base_simulator.config import MarkerConfig, VisualizationMarker, MarkerState
@@ -601,3 +602,184 @@ class Mimic(BaseEnv):
     def load_state_dict(self, state_dict):
         super().load_state_dict(state_dict)
         self.motion_manager.load_state_dict(state_dict["motion_manager"])
+
+
+class MinicQuad(Mimic):
+    # 给四足机器人使用的环境
+    def compute_reward(self):
+        """
+        Abbreviations:
+
+        gt = global translation
+        gr = global rotation
+        rt = root translation
+        rr = root rotation
+        kb = key bodies
+        dp = dof position
+        dv = dof (degrees of freedom velocity)
+        """
+        ref_state = self.motion_lib.get_motion_state(
+            self.motion_manager.motion_ids, self.motion_manager.motion_times
+        )
+        ref_gt = ref_state.rigid_body_pos
+        ref_gr = ref_state.rigid_body_rot
+        ref_lr = ref_state.local_rot
+        ref_gv = ref_state.rigid_body_vel
+        ref_gav = ref_state.rigid_body_ang_vel
+        ref_dv = ref_state.dof_vel
+        ref_dp = ref_state.dof_pos
+
+        ref_lr = ref_lr[:, self.simulator.dof_body_ids]
+        ref_kb = self.process_kb(ref_gt, ref_gr)
+
+        current_state = self.simulator.get_bodies_state()
+        gt, gr, gv, gav = (
+            current_state.rigid_body_pos,
+            current_state.rigid_body_rot,
+            current_state.rigid_body_vel,
+            current_state.rigid_body_ang_vel,
+        )
+        # first remove height based on current position
+        relative_to_data_gt = gt.clone()
+        relative_to_data_gt[:, :, -1:] -= self.terrain.get_ground_heights(gt[:, 0]).view(
+            self.num_envs, 1, 1
+        )
+        # then remove offset to get back to the ground-truth data position
+        relative_to_data_gt[..., :2] -= self.respawn_offset_relative_to_data.clone()[
+            ..., :2
+        ].view(self.num_envs, 1, 2)
+
+        kb = self.process_kb(relative_to_data_gt, gr)
+
+        rt = relative_to_data_gt[:, 0]
+        ref_rt = ref_gt[:, 0]
+
+        if self.config.mimic_reward_config.rt_ignore_height:
+            rt = rt[..., :2]
+            ref_rt = ref_rt[..., :2]
+
+        rr = gr[:, 0]
+        ref_rr = ref_gr[:, 0]
+
+        inv_heading = torch_utils.calc_heading_quat_inv(rr, True)
+        ref_inv_heading = torch_utils.calc_heading_quat_inv(ref_rr, True)
+
+        rv = gv[:, 0]
+        ref_rv = ref_gv[:, 0]
+
+        rav = gav[:, 0]
+        ref_rav = ref_gav[:, 0]
+
+        dof_state = self.simulator.get_dof_state()
+        lr = dof_to_local(dof_state.dof_pos, self.simulator.get_dof_offsets(), True)
+
+        if self.config.mimic_reward_config.add_rr_to_lr:
+            rr = gr[:, 0]
+            ref_rr = ref_gr[:, 0]
+
+            lr = torch.cat([rr.unsqueeze(1), lr], dim=1)
+            ref_lr = torch.cat([ref_rr.unsqueeze(1), ref_lr], dim=1)
+
+        rew_dict = exp_tracking_quad_reward(
+            gt=relative_to_data_gt,
+            rt=rt,
+            rr=rr,
+            kb=kb,
+            gr=gr,
+            lr=lr,
+            rv=rv,
+            rav=rav,
+            gv=gv,
+            gav=gav,
+            dp=dof_state.dof_pos,
+            dv=dof_state.dof_vel,
+            
+            ref_gt=ref_gt,
+            ref_rt=ref_rt,
+            ref_rr=ref_rr,
+            ref_kb=ref_kb,
+            ref_gr=ref_gr,
+            ref_lr=ref_lr,
+            ref_rv=ref_rv,
+            ref_rav=ref_rav,
+            ref_gv=ref_gv,
+            ref_gav=ref_gav,
+            ref_dp=ref_dp,
+            ref_dv=ref_dv,
+            config=self.config.mimic_reward_config
+        )
+        dof_forces = self.simulator.get_dof_forces()
+        power = torch.abs(torch.multiply(dof_forces, dof_state.dof_vel)).sum(dim=-1)
+        pow_rew = -power
+
+        has_reset_grace = self.motion_manager.get_has_reset_grace()
+        pow_rew[has_reset_grace] = 0
+
+        rew_dict["pow_rew"] = pow_rew
+
+        local_ref_gt = self.rotate_pos_to_local(ref_gt, ref_inv_heading)
+        local_gt = self.rotate_pos_to_local(relative_to_data_gt, inv_heading)
+        cartesian_err = (
+            ((local_ref_gt - local_ref_gt[:, 0:1]) - (local_gt - local_gt[:, 0:1]))
+            .pow(2)
+            .sum(-1)
+            .sqrt()
+            .mean(-1)
+        )
+
+        gt_per_joint_err = (ref_gt - relative_to_data_gt).pow(2).sum(-1).sqrt()
+        gt_err = gt_per_joint_err.mean(-1)
+        max_joint_err = gt_per_joint_err.max(-1)[0]
+
+        rh_err = (ref_gt - relative_to_data_gt)[:, 0, -1].abs()
+
+        gr_diff = quat_diff_norm(gr, ref_gr, True)
+        gr_err = gr_diff.mean(-1)
+        gr_err_degrees = gr_err * 180 / torch.pi
+
+        max_gr_err = gr_diff.max(-1)[0]
+        max_gr_err_degrees = max_gr_err * 180 / torch.pi
+
+        lr_diff = quat_diff_norm(lr, ref_lr, True)
+        lr_err = lr_diff.mean(-1)
+        lr_err_degrees = lr_err * 180 / torch.pi
+        max_lr_err = lr_diff.max(-1)[0]
+        max_lr_err_degrees = max_lr_err * 180 / torch.pi
+
+        scaled_rewards: Dict[str, Tensor] = {
+            k: v * getattr(self.config.mimic_reward_config.component_weights, f"{k}_w")
+            for k, v in rew_dict.items()
+        }
+
+        tracking_rew = sum(scaled_rewards.values())
+
+        self.rew_buf = tracking_rew + self.config.mimic_reward_config.positive_constant
+
+        for rew_name, rew in rew_dict.items():
+            self.log_dict[f"raw/{rew_name}_mean"] = rew.mean()
+            self.log_dict[f"raw/{rew_name}_std"] = rew.std()
+
+        for rew_name, rew in scaled_rewards.items():
+            self.log_dict[f"scaled/{rew_name}_mean"] = rew.mean()
+            self.log_dict[f"scaled/{rew_name}_std"] = rew.std()
+
+        other_log_terms = {
+            "tracking_rew": tracking_rew,
+            "total_rew": self.rew_buf,
+            "cartesian_err": cartesian_err,
+            "gt_err": gt_err,
+            "gr_err": gr_err,
+            "gr_err_degrees": gr_err_degrees,
+            "lr_err_degrees": lr_err_degrees,
+            "max_joint_err": max_joint_err,
+            "max_lr_err_degrees": max_lr_err_degrees,
+            "max_gr_err_degrees": max_gr_err_degrees,
+            "root_height_error": rh_err,
+        }
+
+        for rew_name, rew in other_log_terms.items():
+            self.log_dict[f"mimic_other/{rew_name}_mean"] = rew.mean()
+            self.log_dict[f"mimic_other/{rew_name}_std"] = rew.std()
+
+        self.mimic_info_dict.update(rew_dict)
+        self.mimic_info_dict.update(other_log_terms)

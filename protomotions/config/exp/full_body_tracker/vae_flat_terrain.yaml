@@ -2,7 +2,7 @@
 
 defaults:
   - /agent/mimic/agent_vae
-  - /env/mimic
+  - /env/mimic_quad
 
   - /agent/ppo/models/vqvae_actor
   - /agent/ppo/models/mlp_critic_large

@@ -59,9 +59,6 @@ def mul_exp_mean(x: Tensor, coef: float, mean_before_exp: bool):
         # 计算路径：乘系数 -> 指数 -> 均值
         return x.mul(coef).exp().mean(-1)
 
-
-
-
 @torch.jit.script_if_tracing  # This is important to ensure it doesn't compile the omega config early.
 def exp_tracking_reward(
     gt: Tensor,
@@ -163,6 +160,124 @@ def exp_tracking_reward(
     }
 
     return rew_dict
+
+
+@torch.jit.script_if_tracing  # This is important to ensure it doesn't compile the omega config early.
+def exp_tracking_quad_reward(
+    gt: Tensor,
+    rt: Tensor,
+    rr: Tensor,
+    rv: Tensor,
+    rav: Tensor,
+    gv: Tensor,
+    gav: Tensor,
+    kb: Tensor,
+    gr: Tensor,
+    lr: Tensor,
+    dp: Tensor,
+    dv: Tensor,
+    ref_gt: Tensor,
+    ref_rt: Tensor,
+    ref_rr: Tensor,
+    ref_rv: Tensor,
+    ref_rav: Tensor,
+    ref_gv: Tensor,
+    ref_gav: Tensor,
+    ref_kb: Tensor,
+    ref_gr: Tensor,
+    ref_lr: Tensor,
+    ref_dp: Tensor,
+    ref_dv: Tensor,
+    config: DictConfig,
+) -> Dict[str, Tensor]:
+
+    mean_before_exp = config.get("mean_before_exp", True)
+
+    gt_rew = mul_exp_mean(
+        (gt - ref_gt).pow(2).mean(-1),  # [num_envs, bodies, 3]  # [num_envs, bodies]
+        config.component_coefficients.gt_rew_c,
+        mean_before_exp,
+    )
+
+    rh = gt[:, 0, 2]
+    ref_rh = ref_gt[:, 0, 2]
+
+    rh_rew = (rh - ref_rh).pow(2).mul(config.component_coefficients.rh_rew_c).exp()
+
+    rt_rew = (
+        (rt - ref_rt).pow(2).mean(-1).mul(config.component_coefficients.rt_rew_c).exp()
+    )
+    rr_rew = (
+        (rr - ref_rr).pow(2).mean(-1).mul(config.component_coefficients.rr_rew_c).exp()
+    )
+    rv_rew = (
+        (rv - ref_rv).pow(2).mean(-1).mul(config.component_coefficients.rv_rew_c).exp()
+    )
+    
+    rav_rew = (
+        (rav - ref_rav)
+        .pow(2)
+        .mean(-1)
+        .mul(config.component_coefficients.rav_rew_c)
+        .exp()
+    )
+
+    gv_rew = mul_exp_mean(
+        (gv - ref_gv).pow(2).mean(-1),
+        config.component_coefficients.gv_rew_c,
+        mean_before_exp,
+    )
+    gav_rew = mul_exp_mean(
+        (gav - ref_gav).pow(2).mean(-1),
+        config.component_coefficients.gav_rew_c,
+        mean_before_exp,
+    )
+
+    kb_rew = mul_exp_mean(
+        (kb - ref_kb).pow(2).mean(-1),
+        config.component_coefficients.kb_rew_c,
+        mean_before_exp,
+    )
+
+    gr_rew = mul_exp_mean(
+        quat_angle_diff_norm(gr, ref_gr, True),  # [num_envs, bodies]
+        config.component_coefficients.gr_rew_c,
+        mean_before_exp,
+    )
+
+    lr_rew = mul_exp_mean(
+        quat_angle_diff_norm(lr, ref_lr, True),  # [num_envs, bodies]
+        config.component_coefficients.lr_rew_c,
+        mean_before_exp,
+    )
+
+    dp_rew = mul_exp_mean(
+        (dp - ref_dp).pow(2), config.component_coefficients.dp_rew_c, mean_before_exp
+    )
+
+    dv_rew = mul_exp_mean(
+        (dv - ref_dv).pow(2), config.component_coefficients.dv_rew_c, mean_before_exp
+    )
+
+    rew_dict = {
+        "gt_rew": gt_rew,
+        "rt_rew": rt_rew,
+        "rr_rew": rr_rew,
+        "rh_rew": rh_rew,
+        "rv_rew": rv_rew,
+        "rav_rew": rav_rew,
+        "gv_rew": gv_rew,
+        "gav_rew": gav_rew,
+        "kb_rew": kb_rew,
+        "gr_rew": gr_rew,
+        "lr_rew": lr_rew,
+        "dp_rew": dp_rew,
+        "dv_rew": dv_rew,
+    }
+
+    return rew_dict
+
+
 
 
 @torch.jit.script
