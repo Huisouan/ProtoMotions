@@ -161,125 +161,6 @@ def exp_tracking_reward(
 
     return rew_dict
 
-
-@torch.jit.script_if_tracing  # This is important to ensure it doesn't compile the omega config early.
-def exp_tracking_quad_reward(
-    gt: Tensor,
-    rt: Tensor,
-    rr: Tensor,
-    rv: Tensor,
-    rav: Tensor,
-    gv: Tensor,
-    gav: Tensor,
-    kb: Tensor,
-    gr: Tensor,
-    lr: Tensor,
-    dp: Tensor,
-    dv: Tensor,
-    ref_gt: Tensor,
-    ref_rt: Tensor,
-    ref_rr: Tensor,
-    ref_rv: Tensor,
-    ref_rav: Tensor,
-    ref_gv: Tensor,
-    ref_gav: Tensor,
-    ref_kb: Tensor,
-    ref_gr: Tensor,
-    ref_lr: Tensor,
-    ref_dp: Tensor,
-    ref_dv: Tensor,
-    config: DictConfig,
-) -> Dict[str, Tensor]:
-
-    mean_before_exp = config.get("mean_before_exp", True)
-
-    gt_rew = mul_exp_mean(
-        (gt - ref_gt).pow(2).mean(-1),  # [num_envs, bodies, 3]  # [num_envs, bodies]
-        config.component_coefficients.gt_rew_c,
-        mean_before_exp,
-    )
-
-    rh = gt[:, 0, 2]
-    ref_rh = ref_gt[:, 0, 2]
-
-    rh_rew = (rh - ref_rh).pow(2).mul(config.component_coefficients.rh_rew_c).exp()
-
-    rt_rew = (
-        (rt - ref_rt).pow(2).mean(-1).mul(config.component_coefficients.rt_rew_c).exp()
-    )
-    rr_rew = (
-        (rr - ref_rr).pow(2).mean(-1).mul(config.component_coefficients.rr_rew_c).exp()
-    )
-    rv_rew = (
-        (rv - ref_rv).pow(2).mean(-1).mul(config.component_coefficients.rv_rew_c).exp()
-    )
-    
-    rav_rew = (
-        (rav - ref_rav)
-        .pow(2)
-        .mean(-1)
-        .mul(config.component_coefficients.rav_rew_c)
-        .exp()
-    )
-
-    gv_rew = mul_exp_mean(
-        (gv - ref_gv).pow(2).mean(-1),
-        config.component_coefficients.gv_rew_c,
-        mean_before_exp,
-    )
-    gav_rew = mul_exp_mean(
-        (gav - ref_gav).pow(2).mean(-1),
-        config.component_coefficients.gav_rew_c,
-        mean_before_exp,
-    )
-
-    kb_rew = mul_exp_mean(
-        (kb - ref_kb).pow(2).mean(-1),
-        config.component_coefficients.kb_rew_c,
-        mean_before_exp,
-    )
-
-    gr_rew = mul_exp_mean(
-        quat_angle_diff_norm(gr, ref_gr, True),  # [num_envs, bodies]
-        config.component_coefficients.gr_rew_c,
-        mean_before_exp,
-    )
-
-    lr_rew = mul_exp_mean(
-        quat_angle_diff_norm(lr, ref_lr, True),  # [num_envs, bodies]
-        config.component_coefficients.lr_rew_c,
-        mean_before_exp,
-    )
-
-    dp_rew = mul_exp_mean(
-        (dp - ref_dp).pow(2), config.component_coefficients.dp_rew_c, mean_before_exp
-    )
-
-    dv_rew = mul_exp_mean(
-        (dv - ref_dv).pow(2), config.component_coefficients.dv_rew_c, mean_before_exp
-    )
-
-    rew_dict = {
-        "gt_rew": gt_rew,
-        "rt_rew": rt_rew,
-        "rr_rew": rr_rew,
-        "rh_rew": rh_rew,
-        "rv_rew": rv_rew,
-        "rav_rew": rav_rew,
-        "gv_rew": gv_rew,
-        "gav_rew": gav_rew,
-        "kb_rew": kb_rew,
-        "gr_rew": gr_rew,
-        "lr_rew": lr_rew,
-        "dp_rew": dp_rew,
-        "dv_rew": dv_rew,
-    }
-
-    return rew_dict
-
-
-
-
 @torch.jit.script
 def dof_to_local(pose: Tensor, dof_offsets: List[int], w_last: bool) -> Tensor:
     """Convert degrees of freedom (DoF) representation to local rotations.
@@ -426,14 +307,15 @@ def build_max_coords_target_poses_future_rel(
 
 @torch.jit.script_if_tracing
 def build_max_coords_target_poses(
-    cur_gt: Tensor,
-    cur_gr: Tensor,
-    flat_target_pos: Tensor,
-    flat_target_rot: Tensor,
-    num_envs: int,
-    num_future_steps: int,
-    w_last: bool,
+    cur_gt: Tensor,  # 当前根位置 [num_envs, bodies, 3]
+    cur_gr: Tensor,  # 当前根旋转 [num_envs, bodies, 4]
+    flat_target_pos: Tensor,  # 展平的目标位置 [num_envs * num_future_steps, bodies, 3]
+    flat_target_rot: Tensor,  # 展平的目标旋转 [num_envs * num_future_steps, bodies, 4]
+    num_envs: int,  # 环境数量
+    num_future_steps: int,  # 未来步数
+    w_last: bool,  # 四元数的w分量是否在最后
 ):
+    # 扩展当前根位置和根旋转以匹配目标形状
     expanded_body_pos = cur_gt.unsqueeze(1).expand(
         num_envs, num_future_steps, *cur_gt.shape[1:]
     )
@@ -441,14 +323,18 @@ def build_max_coords_target_poses(
         num_envs, num_future_steps, *cur_gr.shape[1:]
     )
 
+    # 将扩展后的根位置和根旋转重塑为目标形状
     flat_cur_pos = expanded_body_pos.reshape(flat_target_pos.shape)
     flat_cur_rot = expanded_body_rot.reshape(flat_target_rot.shape)
 
+    # 提取根位置和根旋转（第一帧）
     root_pos = flat_cur_pos[:, 0, :]
     root_rot = flat_cur_rot[:, 0, :]
 
+    # 计算反向朝向四元数
     heading_inv_rot = torch_utils.calc_heading_quat_inv(root_rot, w_last)
 
+    # 扩展反向朝向四元数并展平
     heading_inv_rot_expand = heading_inv_rot.unsqueeze(-2)
     heading_inv_rot_expand = heading_inv_rot_expand.repeat(
         (1, flat_cur_pos.shape[1], 1)
@@ -458,10 +344,11 @@ def build_max_coords_target_poses(
         heading_inv_rot_expand.shape[2],
     )
 
+    # 扩展根位置
     root_pos_expand = root_pos.unsqueeze(-2)
 
-    """target"""
-    # target body pos   [N, 3xB]
+    """目标计算"""
+    # 计算目标位置（相对于根位置）
     flat_target_body_pos = (flat_target_pos - root_pos_expand).reshape(
         flat_target_pos.shape[0] * flat_target_pos.shape[1], flat_target_pos.shape[2]
     )
@@ -470,6 +357,7 @@ def build_max_coords_target_poses(
     )
     target_body_pos = flat_target_body_pos.reshape(num_envs, num_future_steps, -1)
 
+    # 计算目标相对位置（相对于当前姿态）
     flat_target_body_pos_rel = (flat_target_pos - flat_cur_pos).reshape(
         flat_target_pos.shape[0] * flat_target_pos.shape[1], flat_target_pos.shape[2]
     )
@@ -480,15 +368,15 @@ def build_max_coords_target_poses(
         num_envs, num_future_steps, -1
     )
 
-    # target body rot   [N, 6xB]
+    # 计算目标旋转（应用反向朝向四元数）
     target_body_rot = rotations.quat_mul(
         heading_inv_rot_expand, flat_target_rot, w_last
     )
-
     target_body_rot_obs = torch_utils.quat_to_tan_norm(
         target_body_rot.view(-1, 4), w_last
     ).reshape(num_envs, num_future_steps, -1)
 
+    # 计算目标相对旋转（相对于当前姿态）
     target_rel_body_rot = rotations.quat_mul(
         rotations.quat_conjugate(flat_cur_rot, w_last), flat_target_rot, w_last
     )
@@ -496,6 +384,7 @@ def build_max_coords_target_poses(
         target_rel_body_rot.view(-1, 4), w_last
     ).reshape(num_envs, num_future_steps, -1)
 
+    # 拼接所有观测值并返回
     obs = torch.cat(
         (
             target_body_pos,

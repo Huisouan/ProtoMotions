@@ -221,6 +221,73 @@ def compute_humanoid_observations(
 
 
 @torch.jit.script
+def compute_actor_observations(
+    root_pos: Tensor,
+    root_rot: Tensor,
+    root_vel: Tensor,
+    root_ang_vel: Tensor,
+    dof_pos: Tensor,
+    dof_vel: Tensor,
+    key_body_pos: Tensor,
+    ground_height: Tensor,
+    local_root_obs: bool,
+    dof_obs_size: int,
+    dof_offsets: List[int],
+    w_last: bool,
+) -> Tensor:
+    """计算人形机器人观测向量的函数
+    参数说明：
+    root_pos: 根节点世界坐标系下的位置(x,y,z)，形状为(batch_size, 3)
+    root_rot: 根节点世界坐标系下的四元数旋转，形状为(batch_size, 4)
+    root_vel: 根节点世界坐标系下的线速度，形状为(batch_size, 3)
+    root_ang_vel: 根节点世界坐标系下的角速度，形状为(batch_size, 3)
+    dof_pos: 关节位置（自由度角度），形状为(batch_size, num_dofs)
+    dof_vel: 关节速度（自由度角速度），形状为(batch_size, num_dofs)
+    key_body_pos: 关键身体部位世界坐标系下的位置，形状为(batch_size, num_key_bodies, 3)
+    ground_height: 地面高度值，形状为(batch_size, 1)
+    local_root_obs: 是否使用局部坐标系下的根节点旋转观测
+    dof_obs_size: 每个自由度的观测维度
+    dof_offsets: 不同自由度类型的偏移量列表
+    w_last: 四元数是否采用w分量在最后的格式(w,x,y,z)
+    
+    返回值：
+    组合后的观测向量，形状为(batch_size, obs_dim)
+    """
+    
+    # 计算根节点相对地面的垂直高度
+    root_h = root_pos[:, 2:3] - ground_height
+    
+    # 计算相对于初始朝向的逆旋转四元数（用于坐标系转换）
+    heading_rot = torch_utils.calc_heading_quat_inv(root_rot, w_last)
+
+    # 根据标志位选择根节点旋转的观测形式
+    if local_root_obs:
+        # 将根旋转转换到局部坐标系
+        root_rot_obs = rotations.quat_mul(heading_rot, root_rot, w_last)
+    else:
+        # 保持全局坐标系下的原始旋转
+        root_rot_obs = root_rot
+
+    # 将四元数转换为正切-法线表示（降低维度）
+    root_rot_obs = torch_utils.quat_to_tan_norm(root_rot_obs, w_last)
+
+    # 将根节点的速度转换到局部坐标系
+    local_root_ang_vel = rotations.quat_rotate(heading_rot, root_ang_vel, w_last)
+
+    obs = torch.cat(
+        (
+            root_h,
+            root_rot_obs,
+            local_root_ang_vel,
+            dof_pos,
+            dof_vel,
+        ),
+        dim=-1,
+    )
+    return obs
+
+
+@torch.jit.script
 def compute_humanoid_observations_max(
     body_pos: Tensor,
     body_rot: Tensor,
@@ -363,6 +430,9 @@ def compute_humanoid_reset(
     )
 
     return reset, terminated
+
+
+
 
 
 @torch.jit.script

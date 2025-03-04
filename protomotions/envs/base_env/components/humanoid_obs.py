@@ -87,12 +87,14 @@ class HumanoidObs(BaseComponent):
             dtype=torch.float,
             device=self.env.device,
         )
+        
         self.humanoid_obs_hist_buf = HistoryBuffer(
             self.config.num_historical_steps,
             self.env.num_envs,
             shape=(self.config.obs_size,),
             device=self.env.device,
         )
+        
         body_names = self.env.config.robot.body_names
         num_bodies = len(body_names)
         self.body_contacts = torch.zeros(
@@ -244,3 +246,10 @@ class HumanoidObs(BaseComponent):
             "self_obs": self.humanoid_obs.clone(),
             "historical_self_obs": self.humanoid_obs_hist_buf.get_all_flattened().clone(),
         }
+
+
+class HumanoidSeperateObs(HumanoidObs):
+    def __init__(self, config, env):
+        super().__init__(config, env)
+    
+    
