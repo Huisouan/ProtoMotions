@@ -509,6 +509,7 @@ class Mimic(BaseEnv):
             "max_lr_err_degrees": max_lr_err_degrees,
             "max_gr_err_degrees": max_gr_err_degrees,
             "root_height_error": rh_err,
+            
         }
 
         for rew_name, rew in other_log_terms.items():
@@ -619,7 +620,7 @@ class MinicQuad(Mimic):
         ref_dv = ref_state.dof_vel
         ref_dp = ref_state.dof_pos
 
-        ref_lr = ref_lr[:, self.simulator.dof_body_ids]
+        ref_lr = ref_lr[:, self.simulator._dof_body_ids]
         ref_kb = self.process_kb(ref_gt, ref_gr)
 
         current_state = self.simulator.get_bodies_state()

@@ -19,6 +19,7 @@ env:
     ### Respawn related params
     mimic_early_termination: null
 
+
     mimic_reward_config:
       positive_constant: 0
       relative_kb_pos: False
@@ -29,14 +30,14 @@ env:
 
       component_weights:
         gr_rew_w: 0.0
-        lr_rew_w: 0.55
+        lr_rew_w: 0.0
         gt_rew_w: 0.0
         rt_rew_w: 0.15
         rr_rew_w: 0.15
         rv_rew_w: 0.1
         rav_rew_w: 0.1
         gv_rew_w: 0.0
-        gav_rew_w: 0.1
+        gav_rew_w: 0.0
         kb_rew_w: 0.1
         dp_rew_w: 0.6
         dv_rew_w: 0.05
@@ -45,17 +46,17 @@ env:
 
       component_coefficients:
         gt_rew_c: -1
-        rt_rew_c: -30
+        rt_rew_c: -20
         rr_rew_c: -10
-        rv_rew_c: -0.5
-        rav_rew_c: -0.1
+        rv_rew_c: -2.0
+        rav_rew_c: -0.2
         gv_rew_c: -0.01
         gav_rew_c: -0.01
-        kb_rew_c: -10
+        kb_rew_c: -40
         gr_rew_c: -0.1
         lr_rew_c: -0.2
         dp_rew_c: -1.0
-        dv_rew_c: -0.002
+        dv_rew_c: -0.1
         rh_rew_c: -100
 
     mimic_phase_obs:

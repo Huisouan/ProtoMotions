@@ -201,7 +201,7 @@ class HumanoidObs(BaseComponent):
                 key_body_pos,
                 ground_heights,
                 self.config.local_root_obs,
-                self.env.simulator.dof_obs_size,
+                self.env.simulator._dof_obs_size,
                 self.env.simulator.get_dof_offsets(),
                 True,
             )
