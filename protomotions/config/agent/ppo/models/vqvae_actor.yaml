@@ -11,7 +11,7 @@ agent:
           num_out: ${robot.number_of_actions}
           config:
             actor_logstd: -2.9
-            latent_dim: 128
+            latent_dim: 32
             encoder:
               _target_: protomotions.agents.vae.model.VQVAEEncoder
               _recursive_: False
@@ -63,9 +63,6 @@ agent:
                           - units: 1024
                             activation: elu
                             use_layer_norm: false
-                          - units: 512
-                            activation: elu
-                            use_layer_norm: false
         
             decoder:
               _target_: protomotions.agents.vae.model.VQVAEDecoder
@@ -109,13 +106,13 @@ agent:
                           - units: 1024
                             activation: elu
                             use_layer_norm: false
-                          - units: 512
+                          - units: 1024
                             activation: elu
                             use_layer_norm: false
-                          - units: 256
+                          - units: 1024
                             activation: tanh
                             use_layer_norm: false
-                            
+
         actor_optimizer:
           _target_: torch.optim.Adam
           lr: 2e-5
