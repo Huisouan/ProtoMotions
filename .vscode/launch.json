@@ -77,7 +77,7 @@
         },
 
         {
-            "name": "Debug eval_agent.py",
+            "name": "play ASE",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/protomotions/eval_agent.py",

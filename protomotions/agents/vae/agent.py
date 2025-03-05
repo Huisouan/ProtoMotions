@@ -83,7 +83,6 @@ class VQVAE(Mimic):
     # -----------------------------
     # Optimization
     # -----------------------------
-    
     def calculate_extra_actor_loss(self, batch_dict, dist) -> Tuple[Tensor, Dict]:
         return batch_dict['vq_loss'], {
             "perplexity": batch_dict["perplexity"].detach(),

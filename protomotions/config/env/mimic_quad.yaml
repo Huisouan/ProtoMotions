@@ -6,7 +6,7 @@ defaults:
 
 # Env structure
 env:
-  _target_: protomotions.envs.mimic.env.MinicQuad
+  _target_: protomotions.envs.mimic.env.Mimic
   config:
     state_init: Data
     # Simulation params
@@ -62,7 +62,7 @@ env:
       enabled: True
       type: max-coords
       with_time: True
-      num_future_steps: 1
+      num_future_steps: 10
       num_obs_per_target_pose: ${.base_num_obs_per_target_pose}
       base_num_obs_per_target_pose: ${eval:${.num_obs_per_joint}*${robot.num_bodies}+1*${.with_time}}
       num_obs_per_joint: 18
