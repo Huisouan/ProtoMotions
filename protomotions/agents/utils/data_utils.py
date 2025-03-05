@@ -74,10 +74,28 @@ class ExperienceBuffer(DeviceDtypeModuleMixin):
         self.store_dict[key] += self.total_sum()
 
     def make_dict(self):
+        """
+        创建并返回一个字典，其中包含了经过处理的缓冲区数据，并重置存储字典中的值。
+        
+        此函数首先通过调用`swap_and_flatten01`函数处理`named_buffers`返回的缓冲区数据，
+        并以键值对的形式保存在字典`data`中。随后，遍历`store_dict`字典中的每个元素，
+        检查其值是否与`total_sum`函数返回的总和相等，如果不相等，则抛出异常。
+        最后，将`store_dict`字典中的所有值重置为0。
+        
+        Returns:
+            dict: 包含处理后的缓冲区数据的字典。
+        """
+        # 通过调用swap_and_flatten01函数处理缓冲区数据，并以键值对形式保存
         data = {k: swap_and_flatten01(v) for k, v in self.named_buffers()}
+        
+        # 遍历store_dict中的每个元素，检查并重置其值
         for k, v in self.store_dict.items():
+            # 检查存储的值是否与计算得到的总和一致，如果不一致，则抛出异常
             assert v == self.total_sum(), f"Problem with '{k}', {v}, {self.total_sum()}"
+            # 重置store_dict字典中的所有值为0
             self.store_dict[k] = 0
+        
+        # 返回处理后的数据字典
         return data
 
 

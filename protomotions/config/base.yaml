@@ -22,4 +22,4 @@ save_dir: ${base_dir}/${experiment_name}
 
 eval_overrides:
   headless: False
-  num_envs: 1
+  num_envs: 32

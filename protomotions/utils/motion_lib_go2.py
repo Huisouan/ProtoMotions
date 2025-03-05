@@ -79,7 +79,7 @@ class Go2_MotionLib(MotionLib):
         # Convert wxyz to xyzw
         motion["global_rotation"] = wxyz_to_xyzw(motion["global_rotation"])
         motion["local_rotation"] = wxyz_to_xyzw(motion["local_rotation"])
-        
+
         return motion
 
     def _compute_motion_dof_vels(self, motion):
@@ -87,7 +87,7 @@ class Go2_MotionLib(MotionLib):
         return motion.dof_vels
 
     def fix_motion_heights(self, motion, skeleton_tree):
-        body_heights = motion.global_translation[..., 2].clone()
+        body_heights = motion.global_translation[..., 2].clone() 
         min_height = body_heights.min()
 
         motion.global_translation[..., 2] -= min_height
