@@ -11,13 +11,13 @@ agent:
           num_out: ${robot.number_of_actions}
           config:
             actor_logstd: -2.9
-            latent_dim: 32
+            latent_dim: 64
             encoder:
               _target_: protomotions.agents.vae.model.VQVAEEncoder
               _recursive_: False
               config:
-                num_embeddings: 256
-                embedding_dim: 32
+                num_embeddings: 1024
+                embedding_dim: 8
                 enc:
                   _target_: protomotions.agents.common.mlp.MultiHeadedMLP
                   _recursive_: False
