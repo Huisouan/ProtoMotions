@@ -35,7 +35,7 @@ from protomotions.envs.base_env.env_utils.humanoid_utils import (
 )
 from protomotions.envs.base_env.components.base_component import BaseComponent
 from protomotions.envs.base_env.env_utils.general import HistoryBuffer
-
+from isaac_utils.torch_utils import to_torch, get_axis_params
 class Base_Obs(BaseComponent):
 
     def __init__(self, config, env):
@@ -63,7 +63,8 @@ class Base_Obs(BaseComponent):
             dtype=torch.bool,
             device=self.env.device,
         )
-
+        self.up_axis_idx = 2
+        self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.env.num_envs, 1))
     def post_physics_step(self):
         self.obs_hist_buf.rotate()
 
@@ -129,43 +130,20 @@ class Base_Obs(BaseComponent):
 
         ground_heights = self.env.terrain.get_ground_heights(current_state.rigid_body_pos[:, 0]).clone()
 
-        if self.config.use_max_coords_obs:
-            obs = compute_humanoid_observations_max(
-                current_state.rigid_body_pos,
-                current_state.rigid_body_rot,
-                current_state.rigid_body_vel,
-                current_state.rigid_body_ang_vel,
-                ground_heights,
-                self.config.local_root_obs,
-                self.config.root_height_obs,
-                True,
-            )
+        dof_state = self.env.simulator.get_dof_state(env_ids)
+        dof_pos = dof_state.dof_pos
+        dof_vel = dof_state.dof_vel
 
-        else:
-            dof_state = self.env.simulator.get_dof_state(env_ids)
-            dof_pos = dof_state.dof_pos
-            dof_vel = dof_state.dof_vel
+        root_pos = current_state.rigid_body_pos[:, 0, :]
+        root_rot = current_state.rigid_body_rot[:, 0, :]
+        root_vel = current_state.rigid_body_vel[:, 0, :]
+        root_ang_vel = current_state.rigid_body_ang_vel[:, 0, :]
+        key_body_pos = current_state.rigid_body_pos[:, self.env.key_body_ids, :]
 
-            root_pos = current_state.rigid_body_pos[:, 0, :]
-            root_rot = current_state.rigid_body_rot[:, 0, :]
-            root_vel = current_state.rigid_body_vel[:, 0, :]
-            root_ang_vel = current_state.rigid_body_ang_vel[:, 0, :]
-            key_body_pos = current_state.rigid_body_pos[:, self.env.key_body_ids, :]
+        
 
-            obs = compute_humanoid_observations(
-                root_pos,
-                root_rot,
-                root_vel,
-                root_ang_vel,
-                dof_pos,
-                dof_vel,
-                key_body_pos,
-                ground_heights,
-                self.config.local_root_obs,
-                self.env.simulator._dof_obs_size,
-                self.env.simulator.get_dof_offsets(),
-                True,
-            )
+
+
         self.body_contacts[:] = body_contacts
         self.obs[env_ids] = obs
         self.obs_hist_buf.set_curr(obs, env_ids)

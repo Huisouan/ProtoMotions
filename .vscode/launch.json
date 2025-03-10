@@ -109,6 +109,22 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Play H1.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/protomotions/eval_agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "+robot=h1",
+                "+simulator=isaacgym",
+                "+checkpoint=results/h1_steering/last.ckpt"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "Play Full_tracker.py",
             "type": "python",
             "request": "launch",
