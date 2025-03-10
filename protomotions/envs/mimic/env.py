@@ -508,7 +508,6 @@ class Mimic(BaseEnv):
             "max_lr_err_degrees": max_lr_err_degrees,
             "max_gr_err_degrees": max_gr_err_degrees,
             "root_height_error": rh_err,
-            
         }
 
         for rew_name, rew in other_log_terms.items():
@@ -592,13 +591,3 @@ class Mimic(BaseEnv):
     def load_state_dict(self, state_dict):
         super().load_state_dict(state_dict)
         self.motion_manager.load_state_dict(state_dict["motion_manager"])
-
-
-class MinicSeperate(Mimic):
-    def __init__(self, config, device: torch.device, *args, **kwargs):
-        super().__init__(config, device, *args, **kwargs)  
-        
-          
-    def compute_observations(self, env_ids=None):
-        super().compute_observations(env_ids)
-

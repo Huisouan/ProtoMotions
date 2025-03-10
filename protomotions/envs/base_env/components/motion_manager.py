@@ -55,45 +55,39 @@ class MotionManager(BaseComponent):
 
     def sample_motions(self, env_ids, new_motion_ids=None):
         """
-        重置指定环境中的一组运动和场景。
-        此方法处理为特定环境集合重置运动和场景的过程，确保根据当前配置正确处理重置过程。
-    
+        Reset the motion and scene for a set of environments.
+        This method handles the process of resetting the motion and scene for a specified set of environments.
+        It ensures that the reset process is correctly handled based on the current configuration.
+
         Args:
-            env_ids (Tensor): 需要重置的环境索引。
-            new_motion_ids (Tensor, optional): 重置环境中新的运动ID。如果未提供，则会根据配置生成。
-    
+            env_ids (Tensor): Indices of the environments to reset.
+            new_motion_ids (Tensor, optional): New motion IDs for the reset environments.
         Returns:
-            Tuple[Tensor, Tensor]: 重置环境中新的运动ID和时间。
+            Tuple[Tensor, Tensor]: New motion IDs and times for the reset environments.
         """
         if self.config.fixed_motion_per_env:
-            # 对于每个环境使用固定的运动，通常用于录制。
+            # We typically use this for recording.
             motion_index_offset = self.config.motion_index_offset
             if motion_index_offset is None:
                 motion_index_offset = 0
-            # 计算新的运动ID
             new_motion_ids = torch.fmod(
                 env_ids + motion_index_offset,
                 self.env.motion_lib.num_motions(),
             )
-            # 初始化新的时间
             new_times = torch.zeros_like(
                 self.env.motion_lib.state.motion_lengths[new_motion_ids]
             )
         else:
-            # 如果没有提供新的运动ID，则根据权重随机选择
             if new_motion_ids is None:
                 new_motion_ids = torch.multinomial(self.motion_weights, num_samples=len(env_ids), replacement=True)
-            # 如果配置中指定了固定的运动ID，则使用该ID
             if self.config.fixed_motion_id is not None:
                 new_motion_ids = (
                     torch.zeros_like(new_motion_ids) + self.config.fixed_motion_id
                 )
-            # 从运动库中采样时间
             new_times = self.env.motion_lib.sample_time(
                 new_motion_ids, truncate_time=self.env.dt
             )
-    
-            # 根据初始开始概率决定是否将时间重置为0
+
             if self.config.motion_sampling.init_start_prob > 0:
                 init_start = torch.bernoulli(self.init_start_probs[: len(env_ids)])
                 new_times = torch.where(
@@ -101,8 +95,7 @@ class MotionManager(BaseComponent):
                     torch.zeros_like(new_times),
                     new_times,
                 )
-    
-        # 更新环境中的运动ID和时间
+
         self.motion_ids[env_ids] = new_motion_ids
         self.motion_times[env_ids] = new_times
 

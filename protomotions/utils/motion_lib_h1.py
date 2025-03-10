@@ -112,4 +112,3 @@ class H1_MotionLib(MotionLib):
                 sliced_motion[key] = copy.deepcopy(motion[key])
 
         return EasyDict(sliced_motion)
-

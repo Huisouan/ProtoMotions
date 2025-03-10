@@ -101,7 +101,6 @@ class GenesisSimulator(Simulator):
                 ambient_light    = (0.1, 0.1, 0.1), # ambient light setting
             ),
             renderer=gs.renderers.Rasterizer(), # using rasterizer for camera rendering
-            show_FPS = self.config.sim.show_fps,
         )
         
         if not self.headless:

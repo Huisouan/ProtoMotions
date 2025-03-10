@@ -347,13 +347,10 @@ class BaseEnv:
         )
 
     def compute_reward(self):
-        self.compute_penalty()
         self.rew_buf[:] = torch.ones(
             self.num_envs, dtype=torch.float, device=self.device
         )
 
-    def compute_penalty(self):
-        pass
     ###############################################################
     # Handle Resets
     ###############################################################

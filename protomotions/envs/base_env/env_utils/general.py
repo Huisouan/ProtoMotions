@@ -80,6 +80,7 @@ class StepTracker(DeviceDtypeModuleMixin):
         self.steps[env_ids] -= shift
         self.cur_max_steps[env_ids] -= shift
 
+
 class HistoryBuffer(DeviceDtypeModuleMixin):
     """
     Buffer that stores the past N frames of a tensor.

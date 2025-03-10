@@ -35,6 +35,7 @@ from protomotions.envs.mimic.mimic_utils import (
     build_max_coords_target_poses_future_rel,
 )
 
+
 class MimicObs(BaseComponent):
     def __init__(self, config, env):
         super().__init__(config, env)
@@ -138,7 +139,6 @@ class MimicObs(BaseComponent):
                 num_future_steps=num_future_steps,
                 w_last=True,
             )
-        
         elif target_pose_type == "max-coords-future-rel":
             target_pose_obs = build_max_coords_target_poses_future_rel(
                 cur_gt=current_state.rigid_body_pos,

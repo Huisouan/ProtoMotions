@@ -42,10 +42,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(
-        motion_file="data/motions/go2/go2_motions.yaml",
-        simulator="genesis",
-        robot="go2",
-        num_envs=1,
-        
-    )
+    typer.run(main)

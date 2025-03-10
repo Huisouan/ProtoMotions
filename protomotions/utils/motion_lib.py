@@ -306,80 +306,54 @@ class MotionLib(DeviceDtypeModuleMixin):
     def get_motion_state(
         self, motion_ids, motion_times, joint_3d_format="exp_map"
     ) -> RobotState:
-        """
-        根据运动ID和时间计算机器人的运动状态。
-
-        参数:
-            motion_ids (int): 运动的ID。
-            motion_times (float): 运动发生的时间。
-            joint_3d_format (str, optional): 3D关节表示的格式。默认为"exp_map"。
-
-        返回:
-            RobotState: 包含机器人运动状态的实例。
-        """
-        # 获取指定运动的长度
         motion_len = self.state.motion_lengths[motion_ids]
-        # 确保运动时间在有效范围内
-        motion_times = motion_times.clip(min=0).clip(max=motion_len)
+        motion_times = motion_times.clip(min=0).clip(
+            max=motion_len
+        )  # Making sure time is in bounds
 
-        # 获取指定运动的帧数和时间间隔
         num_frames = self.state.motion_num_frames[motion_ids]
         dt = self.state.motion_dt[motion_ids]
 
-        # 计算用于混合的两个帧的索引和混合因子
         frame_idx0, frame_idx1, blend = self._calc_frame_blend(
             motion_times, motion_len, num_frames, dt
         )
 
-        # 计算数据中两个帧的索引
         f0l = frame_idx0 + self.length_starts[motion_ids]
         f1l = frame_idx1 + self.length_starts[motion_ids]
 
-        # 获取两个帧的根位置
         root_pos0 = self.gts[f0l, 0]
         root_pos1 = self.gts[f1l, 0]
 
-        # 获取两个帧的根旋转
         root_rot0 = self.grs[f0l, 0]
         root_rot1 = self.grs[f1l, 0]
 
-        # 获取两个帧的局部旋转
         local_rot0 = self.lrs[f0l]
         local_rot1 = self.lrs[f1l]
 
-        # 获取两个帧的根速度
         root_vel0 = self.grvs[f0l]
         root_vel1 = self.grvs[f1l]
 
-        # 获取两个帧的根角速度
         root_ang_vel0 = self.gravs[f0l]
         root_ang_vel1 = self.gravs[f1l]
 
-        # 获取两个帧的全局速度
         global_vel0 = self.gvs[f0l]
         global_vel1 = self.gvs[f1l]
 
-        # 获取两个帧的全局角速度
         global_ang_vel0 = self.gavs[f0l]
         global_ang_vel1 = self.gavs[f1l]
 
-        # 获取两个帧的关键身体位置
         key_body_pos0 = self.gts[f0l.unsqueeze(-1), self.key_body_ids.unsqueeze(0)]
         key_body_pos1 = self.gts[f1l.unsqueeze(-1), self.key_body_ids.unsqueeze(0)]
 
-        # 获取两个帧的自由度（DOF）速度
         dof_vel0 = self.dvs[f0l]
         dof_vel1 = self.dvs[f1l]
 
-        # 获取两个帧的刚体位置
         rigid_body_pos0 = self.gts[f0l]
         rigid_body_pos1 = self.gts[f1l]
 
-        # 获取两个帧的刚体旋转
         rigid_body_rot0 = self.grs[f0l]
         rigid_body_rot1 = self.grs[f1l]
 
-        # 收集所有获取的值
         vals = [
             root_pos0,
             root_pos1,
@@ -402,40 +376,29 @@ class MotionLib(DeviceDtypeModuleMixin):
             rigid_body_rot0,
             rigid_body_rot1,
         ]
-        # 确保这些值都不是 float64 类型
         for v in vals:
             assert v.dtype != torch.float64
 
-        # 准备混合因子以进行后续操作
         blend = blend.unsqueeze(-1)
 
-        # 计算混合后的根位置
         root_pos: Tensor = (1.0 - blend) * root_pos0 + blend * root_pos1
-        # 调整根位置的高度
         root_pos[:, 2] += self.ref_height_adjust
 
-        # 使用球面线性插值（slerp）计算混合后的根旋转
         root_rot: Tensor = torch_utils.slerp(root_rot0, root_rot1, blend)
 
-        # 准备关键身体位置的混合因子
         blend_exp = blend.unsqueeze(-1)
-        # 计算混合后的关键身体位置
         key_body_pos = (1.0 - blend_exp) * key_body_pos0 + blend_exp * key_body_pos1
-        # 调整关键身体位置的高度
         key_body_pos[:, :, 2] += self.ref_height_adjust
 
-        # 使用 slerp 计算混合后的局部旋转
         local_rot = torch_utils.slerp(
             local_rot0, local_rot1, torch.unsqueeze(blend, axis=-1)
         )
 
-        # 如果存在自由度位置，则计算自由度位置
-        if hasattr(self, "dof_pos"):
+        if hasattr(self, "dof_pos"):  # H1 joints
             dof_pos = (1.0 - blend) * self.dof_pos[f0l] + blend * self.dof_pos[f1l]
         else:
             dof_pos: Tensor = self._local_rotation_to_dof(local_rot, joint_3d_format)
 
-        # 计算混合后的速度和角速度
         root_vel = (1.0 - blend) * root_vel0 + blend * root_vel1
         root_ang_vel = (1.0 - blend) * root_ang_vel0 + blend * root_ang_vel1
         dof_vel = (1.0 - blend) * dof_vel0 + blend * dof_vel1
@@ -447,7 +410,6 @@ class MotionLib(DeviceDtypeModuleMixin):
             1.0 - blend_exp
         ) * global_ang_vel0 + blend_exp * global_ang_vel1
 
-        # 创建一个包含计算值的 RobotState 实例
         motion_state = RobotState(
             root_pos=root_pos,
             root_rot=root_rot,
@@ -463,7 +425,6 @@ class MotionLib(DeviceDtypeModuleMixin):
             rigid_body_ang_vel=global_ang_vel,
         )
 
-        # 返回运动状态
         return motion_state
 
     @staticmethod
@@ -866,47 +827,23 @@ def fix_motion_fps(
     target_frame_rate,
     skeleton_tree,
 ):
-    """
-    调整运动数据的帧率。
-
-    该函数通过更改给定运动数据的帧率，生成一个新的运动实例。
-    如果未提供骨架树（skeleton_tree），则使用运动数据中的骨架树。
-
-    参数:
-    - motion: 原始的运动数据。
-    - orig_fps: 原始运动数据的帧率。
-    - target_frame_rate: 目标帧率，即希望调整到的新帧率。
-    - skeleton_tree: 骨架树，描述了骨架的结构。
-
-    返回:
-    - new_motion: 调整帧率后的新的运动实例。
-    """
-    
-    # 检查是否提供了骨架树，如果没有提供，尝试从运动数据中获取
     if skeleton_tree is None:
         if hasattr(motion, "skeleton_tree"):
             skeleton_tree = motion.skeleton_tree
         else:
-            # 如果无法获取骨架树，返回原始运动数据
             return motion
 
-    # 计算帧率调整的倍数，用于后续采样
     skip = int(np.round(orig_fps / target_frame_rate))
 
-    # 对局部旋转和根节点平移数据进行降采样
     lr = motion.local_rotation[::skip]
     rt = motion.root_translation[::skip]
 
-    # 使用降采样的局部旋转和根节点平移数据构建新的骨架状态
     new_sk_state = SkeletonState.from_rotation_and_root_translation(
         skeleton_tree,
         lr,
         rt,
         is_local=True,
     )
-    
-    # 使用新的骨架状态构建新的运动实例，并设置目标帧率
     new_motion = SkeletonMotion.from_skeleton_state(new_sk_state, fps=target_frame_rate)
 
-    # 返回新的运动实例
     return new_motion
