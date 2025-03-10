@@ -13,7 +13,7 @@
             "args": [
                 "+exp=full_body_tracker/mlp_flat_terrain.yaml",
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+experiment_name=full_body_tracker",
                 "motion_file=data/motions/go2/go2_motions.yaml"
             ],
@@ -31,7 +31,7 @@
             "args": [
                 "+exp=full_body_tracker/vae_flat_terrain.yaml",
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+experiment_name=vqvae_body_tracker",
                 "motion_file=data/motions/go2/go2_motions.yaml"
             ],
@@ -50,7 +50,7 @@
             "args": [
                 "+exp=ase_mlp",
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+experiment_name=go2_ase",
                 "motion_file=data/motions/go2/go2_motions.yaml"
             ],
@@ -68,7 +68,7 @@
             "args": [
                 "+exp=path_follower_amp_mlp.yaml",
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+experiment_name=path_follower_amp_mlp",
                 "motion_file=data/motions/go2/go2_motions.yaml"
             ],
@@ -86,7 +86,7 @@
             },
             "args": [
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+checkpoint=results/go2_ase/last.ckpt"
             ],
             "console": "integratedTerminal",
@@ -102,7 +102,7 @@
             },
             "args": [
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+checkpoint=results/vqvae_body_tracker/last.ckpt"
             ],
             "console": "integratedTerminal",
@@ -118,7 +118,7 @@
             },
             "args": [
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+checkpoint=results/full_body_tracker/last.ckpt"
             ],
             "console": "integratedTerminal",
@@ -137,7 +137,7 @@
                 "+exp=mimic",
                 "+opt=wandb",
                 "+robot=go2",
-                "+simulator=genesis",
+                "+simulator=isaacgym",
                 "+checkpoint=null",
                 "+training_max_steps=1",
                 "+motion_file=data/motions/go2/go2_motions.yaml",
