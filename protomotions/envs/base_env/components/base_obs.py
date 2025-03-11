@@ -28,7 +28,7 @@
 
 import torch
 from torch import Tensor
-
+from isaac_utils.rotations import quat_rotate_inverse ,quat_rotate,quat_inverse
 from protomotions.envs.base_env.env_utils.humanoid_utils import (
     compute_humanoid_observations,
     compute_humanoid_observations_max,
@@ -54,7 +54,20 @@ class Base_Obs(BaseComponent):
             device=self.env.device,
         )
         
+        self.privileged_obs = torch.zeros(
+            self.env.num_envs,
+            self.config.privileged_obs_size,  # 需要确保配置中有该参数
+            dtype=torch.float,
+            device=self.env.device,
+        )
+        self.obs_privilege_hist_buf = HistoryBuffer(
+            self.config.num_historical_steps,
+            self.env.num_envs,
+            shape=(self.config.privileged_obs_size,),
+            device=self.env.device,
+        )
         body_names = self.env.config.robot.body_names
+        
         num_bodies = len(body_names)
         self.body_contacts = torch.zeros(
             self.env.num_envs,
@@ -67,6 +80,7 @@ class Base_Obs(BaseComponent):
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.env.num_envs, 1))
     def post_physics_step(self):
         self.obs_hist_buf.rotate()
+        self.obs_privilege_hist_buf.rotate()
 
     def reset_envs(self, env_ids, reset_default_env_ids, reset_ref_env_ids, reset_ref_motion_ids, reset_ref_motion_times):
         if self.config.num_historical_steps > 1:
@@ -75,19 +89,23 @@ class Base_Obs(BaseComponent):
     def reset_hist_buf(self, env_ids, reset_default_env_ids, reset_ref_env_ids, reset_ref_motion_ids, reset_ref_motion_times):
         if len(reset_default_env_ids) > 0:
             self.reset_hist_default(reset_default_env_ids)
-        """
+
         if len(reset_ref_env_ids) > 0:
             self.reset_hist_ref(
                 reset_ref_env_ids,
                 reset_ref_motion_ids,
                 reset_ref_motion_times,
             )
-        """
+
     def reset_hist_default(self, env_ids):
         self.obs_hist_buf.set_hist(
             self.obs_hist_buf.get_current(env_ids), env_ids=env_ids
         )
-
+        self.obs_privilege_hist_buf.set_hist(
+            self.obs_privilege_hist_buf.get_current(env_ids), env_ids=env_ids
+        )
+        
+        
     def reset_hist_ref(self, env_ids, motion_ids, motion_times):
         dt = self.env.dt
         motion_ids = torch.tile(
@@ -107,23 +125,20 @@ class Base_Obs(BaseComponent):
 
         ref_state = self.env.motion_lib.get_motion_state(motion_ids, motion_times)
 
-        obs_ref = compute_humanoid_observations_max(
-            ref_state.rigid_body_pos,
-            ref_state.rigid_body_rot,
-            ref_state.rigid_body_vel,
-            ref_state.rigid_body_ang_vel,
-            torch.zeros(len(motion_ids), 1, device=self.env.device),
-            self.config.local_root_obs,
-            self.config.root_height_obs,
-            True,
-        )
+        obs_ref = None
         self.obs_hist_buf.set_hist(
             obs_ref.view(
                 len(env_ids), self.config.num_historical_steps - 1, -1
             ).permute(1, 0, 2),
             env_ids,
         )
-
+        self.obs_privilege_hist_buf.set_hist(
+            obs_ref.view(
+                len(env_ids), self.config.num_historical_steps - 1, -1
+            ).permute(1, 0, 2),
+            env_ids,
+        )
+        
     def compute_observations(self, env_ids):
         current_state = self.env.simulator.get_bodies_state(env_ids)
         body_contacts = self.env.simulator.get_bodies_contact_buf(env_ids)
@@ -134,19 +149,47 @@ class Base_Obs(BaseComponent):
         dof_pos = dof_state.dof_pos
         dof_vel = dof_state.dof_vel
 
-        root_pos = current_state.rigid_body_pos[:, 0, :]
+
         root_rot = current_state.rigid_body_rot[:, 0, :]
         root_vel = current_state.rigid_body_vel[:, 0, :]
         root_ang_vel = current_state.rigid_body_ang_vel[:, 0, :]
-        key_body_pos = current_state.rigid_body_pos[:, self.env.key_body_ids, :]
 
+
+        # 基础观测计算（保持不变）
+        base_lin_vel = root_vel
+        base_ang_vel = root_ang_vel
+        projected_gravity = quat_rotate_inverse(
+            root_rot, self.gravity_vec[env_ids], w_last=True
+        )
+        actions = self.env.simulator.get_actions(env_ids)
+
+        # 组合privileged_obs
+        privileged_obs = torch.cat([
+            base_lin_vel,          # (3)
+            base_ang_vel,         # (3)
+            projected_gravity,    # (3)
+            dof_pos,              # (num_dof)
+            dof_vel,              # (num_dof)
+            actions,              # (num_dof)
+        ], dim=-1)
+
+        # 原有self_obs的计算（保持不变）
+        obs = torch.cat([
+            base_ang_vel,
+            projected_gravity,
+            dof_pos,
+            dof_vel,
+            actions
+        ], dim=-1)
         
-
-
-
-        self.body_contacts[:] = body_contacts
+        # 更新观测值
         self.obs[env_ids] = obs
+        self.privileged_obs[env_ids] = privileged_obs
+        
+        self.body_contacts[:] = body_contacts
+        
         self.obs_hist_buf.set_curr(obs, env_ids)
+        self.obs_privilege_hist_buf.set_curr(privileged_obs, env_ids)
 
     def build_self_obs_demo(#for ASE/AMP
         self, motion_ids: Tensor, motion_times0: Tensor, num_steps: int
@@ -181,5 +224,7 @@ class Base_Obs(BaseComponent):
     def get_obs(self):
         return {
             "self_obs": self.obs.clone(),
+            "privilege_obs": self.obs.clone(),
             "historical_self_obs": self.obs_hist_buf.get_all_flattened().clone(),
+            "historical_privilege_obs": self.obs_privilege_hist_buf.get_all_flattened().clone(),
         }

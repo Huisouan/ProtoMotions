@@ -46,9 +46,15 @@ from protomotions.envs.base_env.env_utils.terrains.terrain_config import Terrain
 from protomotions.envs.base_env.components.humanoid_obs import HumanoidObs
 from protomotions.envs.base_env.components.terrain_obs import TerrainObs
 from protomotions.envs.base_env.components.motion_manager import MotionManager
+from protomotions.envs.base_env.components.humanoid_control import HumanoidControl
+
+
+
 
 from protomotions.utils.motion_lib import MotionLib
 from protomotions.utils.scene_lib import SceneLib
+
+
 
 class BaseEnv:
     class StateInit(Enum):
@@ -309,6 +315,9 @@ class BaseEnv:
 
         self.compute_observations()
         self.compute_reward()
+        self.compute_regulation_rewards()
+        
+        
         if not self.disable_reset:
             self.compute_reset()
 
@@ -350,6 +359,9 @@ class BaseEnv:
         self.rew_buf[:] = torch.ones(
             self.num_envs, dtype=torch.float, device=self.device
         )
+
+    def compute_regulation_rewards(self):
+        pass
 
     ###############################################################
     # Handle Resets

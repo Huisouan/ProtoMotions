@@ -586,6 +586,28 @@ class Simulator(ABC):
             torch.Tensor: Raw object contact forces.
         """
         raise NotImplementedError
+    
+    def get_actions(self, env_ids: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """
+        Retrieve the actions applied to the simulator in the common DOF ordering.
+        
+        Args:
+            env_ids (Optional[torch.Tensor]): Optional tensor of environment IDs to filter.
+        
+        Returns:
+            torch.Tensor: Actions tensor in common DOF ordering. Shape: (num_envs, num_dof) or (filtered_envs, num_dof)
+        """
+        # Get simulator-ordered actions
+        actions_sim = self._actions
+        
+        # Filter by environment IDs if provided
+        if env_ids is not None:
+            actions_sim = actions_sim[env_ids]
+        
+        # Convert from simulator DOF order to common DOF order
+        actions_common = actions_sim[:, self.data_conversion.dof_convert_to_common]
+        
+        return actions_common
 
     # -------------------------
     # 🎮 Group 5: Control & Computation Methods

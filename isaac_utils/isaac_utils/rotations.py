@@ -115,6 +115,13 @@ def quat_mul(a, b, w_last: bool):
 
     return quat
 
+@torch.jit.script
+def quat_inverse(x, w_last):
+    # type: (Tensor, bool) -> Tensor
+    """
+    The inverse of the rotation
+    """
+    return quat_conjugate(x, w_last=w_last)
 
 @torch.jit.script
 def quat_conjugate(a: Tensor, w_last: bool) -> Tensor:
