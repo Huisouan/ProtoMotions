@@ -229,7 +229,6 @@ def compute_heading_observations(
     obs = torch.cat([local_tar_dir, tar_speed], dim=-1)
     return obs
 
-
 @torch.jit.script
 def compute_heading_reward(
     root_pos: Tensor,

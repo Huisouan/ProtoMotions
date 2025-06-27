@@ -12,3 +12,4 @@ data/smpl/*
 data/HumanEva/*
 
 /isaacgym
+/.vscode

@@ -44,6 +44,8 @@ from protomotions.simulator.isaaclab.utils.robots import (
     SMPL_CFG,
     SMPLX_CFG,
     H1_CFG,
+    G1_CFG,
+    
 )
 
 
@@ -107,7 +109,7 @@ class SceneCfg(InteractiveSceneCfg):
                 prim_path="/World/envs/env_.*/Robot/bodies/.*",
                 filter_prim_paths_expr=[f"/World/objects/object_{i}" for i in range(0)],
             )
-        elif robot_type == "h1":
+        elif robot_type == "h1" or robot_type =="g1":
             init_state = ArticulationCfg.InitialStateCfg(
                 pos=tuple(robot_config.init_state.pos),
                 joint_pos={
@@ -115,7 +117,7 @@ class SceneCfg(InteractiveSceneCfg):
                 },
                 joint_vel={".*": 0.0},
             )
-
+            #TODO 是否要使用 IdealPDActuatorCfg还不清楚
             # ImplicitActuatorCfg IdealPDActuatorCfg
             actuators = {
                 robot_config.dof_names[i]: IdealPDActuatorCfg(
@@ -129,13 +131,20 @@ class SceneCfg(InteractiveSceneCfg):
                 ) for i in range(len(robot_config.dof_names))
             }
             
-            self.robot: ArticulationCfg = H1_CFG.replace(
-                prim_path="/World/envs/env_.*/Robot", init_state=init_state, actuators=actuators
-            )
+            if robot_type == "h1":
+                self.robot: ArticulationCfg = H1_CFG.replace(
+                    prim_path="/World/envs/env_.*/Robot", init_state=init_state, actuators=actuators
+                )                
+            else:
+                self.robot: ArticulationCfg = G1_CFG.replace(
+                    prim_path="/World/envs/env_.*/Robot", init_state=init_state, actuators=actuators
+                )
+                
             self.contact_sensor: ContactSensorCfg = ContactSensorCfg(
                 prim_path="/World/envs/env_.*/Robot/.*",
                 filter_prim_paths_expr=[f"/World/objects/object_{i}" for i in range(0)],
             )
+            
         else:
             raise ValueError(f"Unsupported robot type: {robot_type}")
 
@@ -191,3 +200,7 @@ class SceneCfg(InteractiveSceneCfg):
                 visual_material=terrain_visual_material,
                 physics_material=terrain_physics_material,
             )
+
+#TODO 增加一个带相机的class
+
+#class ScenevisCfg(SceneCfg):

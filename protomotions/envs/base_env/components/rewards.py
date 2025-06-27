@@ -4,15 +4,29 @@ import torch
 from torch import Tensor
 
 from protomotions.envs.mimic.mimic_utils import mul_exp_mean
-
-
     ###############################################################
     # Rewards
     ###############################################################
+
+
+def compute_regulation_rewards(config: DictConfig, **kwargs):
+    total_reward = 0.0
     
+    for reward_name in config.reward_functions:
+        if reward_name not in globals() or not callable(globals()[reward_name]):
+            continue  # 或抛出警告
+            
+        # 获取参数列表
+        args = REWARD_ARG_MAP.get(reward_name, [])
+        # 动态构造参数
+        params = {arg: kwargs[arg] for arg in args if arg in kwargs}
+        
+        # 执行奖励函数
+        reward_func = globals()[reward_name]
+        total_reward += config.reward_scales.get(reward_name, 1.0) * reward_func(**params)
     
-    
-    
+    return total_reward
+
 @torch.jit.script
 def reward_tracking_lin_vel(commands: Tensor, base_lin_vel: Tensor, tracking_sigma: float) -> Tensor:
     lin_vel_error = torch.sum(torch.square(commands[:, :2] - base_lin_vel[:, :2]), dim=1)

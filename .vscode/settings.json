@@ -17,5 +17,12 @@
             "command": "extension.execute",
             "priority": 4
         }
+    ],
+    "python.analysis.extraPaths": [
+        "/home/hsh/Code/IsaacLab/source/isaaclab_tasks",
+        "/home/hsh/Code/IsaacLab/source/isaaclab",
+        "/home/hsh/Code/IsaacLab/source/isaaclab_rl",
+        "/home/hsh/Code/IsaacLab/source/isaaclab_mimic",
+        "/home/hsh/Code/IsaacLab/source/isaaclab_assets"
     ]
 }

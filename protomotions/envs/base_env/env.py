@@ -46,7 +46,6 @@ from protomotions.envs.base_env.env_utils.terrains.terrain_config import Terrain
 from protomotions.envs.base_env.components.humanoid_obs import HumanoidObs
 from protomotions.envs.base_env.components.terrain_obs import TerrainObs
 from protomotions.envs.base_env.components.motion_manager import MotionManager
-from protomotions.envs.base_env.components.humanoid_control import HumanoidControl
 
 
 
@@ -127,6 +126,7 @@ class BaseEnv:
         self.init_done = False
 
         # Buffers
+        
         self.self_obs_cb = HumanoidObs(self.config.humanoid_obs, self)
         self.terrain_obs_cb = TerrainObs(self.config.terrain.config, self)
 
@@ -361,6 +361,14 @@ class BaseEnv:
         )
 
     def compute_regulation_rewards(self):
+        current_state = self.simulator.
+        
+        
+        
+        
+        
+        
+        #TODO
         pass
 
     ###############################################################
