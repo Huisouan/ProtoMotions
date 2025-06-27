@@ -1,30 +1,10 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
+# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 import torch
 from torch import Tensor
@@ -35,16 +15,16 @@ from typing import Tuple
 
 def wxyz_to_xyzw(quat: Tensor):
     shape = quat.shape
-    flat_quat = quat.view(-1, 4)
+    flat_quat = quat.reshape(-1, 4)
     flat_quat = flat_quat[:, [1, 2, 3, 0]]
-    return flat_quat.view(shape)
+    return flat_quat.reshape(shape)
 
 
 def xyzw_to_wxyz(quat: Tensor):
     shape = quat.shape
-    flat_quat = quat.view(-1, 4)
+    flat_quat = quat.reshape(-1, 4)
     flat_quat = flat_quat[:, [3, 0, 1, 2]]
-    return flat_quat.view(shape)
+    return flat_quat.reshape(shape)
 
 
 @torch.jit.script
@@ -109,30 +89,21 @@ def quat_mul(a, b, w_last: bool):
     z = qq - zz + (z1 + y1) * (w2 - x2)
 
     if w_last:
-        quat = torch.stack([x, y, z, w], dim=-1).view(shape)
+        quat = torch.stack([x, y, z, w], dim=-1).reshape(shape)
     else:
-        quat = torch.stack([w, x, y, z], dim=-1).view(shape)
+        quat = torch.stack([w, x, y, z], dim=-1).reshape(shape)
 
     return quat
+
 
 @torch.jit.script
 def quat_conjugate(a: Tensor, w_last: bool) -> Tensor:
     shape = a.shape
     a = a.reshape(-1, 4)
     if w_last:
-        return torch.cat((-a[:, :3], a[:, -1:]), dim=-1).view(shape)
+        return torch.cat((-a[:, :3], a[:, -1:]), dim=-1).reshape(shape)
     else:
-        return torch.cat((a[:, 0:1], -a[:, 1:]), dim=-1).view(shape)
-
-
-@torch.jit.script
-def quat_inverse(x, w_last):
-    # type: (Tensor, bool) -> Tensor
-    """
-    The inverse of the rotation
-    """
-    return quat_conjugate(x, w_last=w_last)
-
+        return torch.cat((a[:, 0:1], -a[:, 1:]), dim=-1).reshape(shape)
 
 
 @torch.jit.script
@@ -147,7 +118,7 @@ def quat_apply(a: Tensor, b: Tensor, w_last: bool) -> Tensor:
         xyz = a[:, 1:]
         w = a[:, :1]
     t = xyz.cross(b, dim=-1) * 2
-    return (b + w * t + xyz.cross(t, dim=-1)).view(shape)
+    return (b + w * t + xyz.cross(t, dim=-1)).reshape(shape)
 
 
 @torch.jit.script
@@ -186,7 +157,7 @@ def quat_rotate_inverse(q: Tensor, v: Tensor, w_last: bool) -> Tensor:
     b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
     c = (
         q_vec
-        * torch.bmm(q_vec.view(shape[0], 1, 3), v.view(shape[0], 3, 1)).squeeze(-1)
+        * torch.bmm(q_vec.reshape(shape[0], 1, 3), v.reshape(shape[0], 3, 1)).squeeze(-1)
         * 2.0
     )
     return a - b + c
@@ -363,7 +334,7 @@ def normalise_quat_in_pose(pose):
 
 @torch.jit.script
 def quat_apply_yaw(quat: Tensor, vec: Tensor, w_last: bool) -> Tensor:
-    quat_yaw = quat.clone().view(-1, 4)
+    quat_yaw = quat.clone().reshape(-1, 4)
     quat_yaw[:, :2] = 0.0
     quat_yaw = normalize(quat_yaw)
     return quat_apply(quat_yaw, vec, w_last)

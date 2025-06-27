@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 from protomotions.envs.base_env.env_utils.terrains.flat_terrain import FlatTerrain
 from protomotions.simulator.base_simulator.config import RobotConfig
 import isaaclab.sim as sim_utils
@@ -44,8 +16,6 @@ from protomotions.simulator.isaaclab.utils.robots import (
     SMPL_CFG,
     SMPLX_CFG,
     H1_CFG,
-    G1_CFG,
-    
 )
 
 
@@ -109,15 +79,16 @@ class SceneCfg(InteractiveSceneCfg):
                 prim_path="/World/envs/env_.*/Robot/bodies/.*",
                 filter_prim_paths_expr=[f"/World/objects/object_{i}" for i in range(0)],
             )
-        elif robot_type == "h1" or robot_type =="g1":
+        elif robot_type in ["h1", "g1"]:
             init_state = ArticulationCfg.InitialStateCfg(
                 pos=tuple(robot_config.init_state.pos),
                 joint_pos={
-                    joint_name: joint_angle for joint_name, joint_angle in robot_config.init_state.default_joint_angles.items()
+                    joint_name: joint_angle for joint_name, joint_angle in
+                    robot_config.init_state.default_joint_angles.items()
                 },
                 joint_vel={".*": 0.0},
             )
-            #TODO 是否要使用 IdealPDActuatorCfg还不清楚
+
             # ImplicitActuatorCfg IdealPDActuatorCfg
             actuators = {
                 robot_config.dof_names[i]: IdealPDActuatorCfg(
@@ -130,21 +101,19 @@ class SceneCfg(InteractiveSceneCfg):
                     friction=robot_config.dof_joint_frictions[i],
                 ) for i in range(len(robot_config.dof_names))
             }
-            
+
             if robot_type == "h1":
                 self.robot: ArticulationCfg = H1_CFG.replace(
                     prim_path="/World/envs/env_.*/Robot", init_state=init_state, actuators=actuators
-                )                
-            else:
+                )
+            elif robot_type == "g1":
                 self.robot: ArticulationCfg = G1_CFG.replace(
                     prim_path="/World/envs/env_.*/Robot", init_state=init_state, actuators=actuators
                 )
-                
             self.contact_sensor: ContactSensorCfg = ContactSensorCfg(
                 prim_path="/World/envs/env_.*/Robot/.*",
                 filter_prim_paths_expr=[f"/World/objects/object_{i}" for i in range(0)],
             )
-            
         else:
             raise ValueError(f"Unsupported robot type: {robot_type}")
 
@@ -200,7 +169,3 @@ class SceneCfg(InteractiveSceneCfg):
                 visual_material=terrain_visual_material,
                 physics_material=terrain_physics_material,
             )
-
-#TODO 增加一个带相机的class
-
-#class ScenevisCfg(SceneCfg):

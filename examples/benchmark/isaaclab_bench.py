@@ -32,6 +32,7 @@ robot_config = RobotConfig(
     body_names=['pelvis', 'head', 'left_hip_yaw_link', 'left_hip_roll_link', 'left_hip_pitch_link', 'left_knee_link', 'left_ankle_link', 'left_foot_link', 'right_hip_yaw_link', 'right_hip_roll_link', 'right_hip_pitch_link', 'right_knee_link', 'right_ankle_link', 'right_foot_link', 'torso_link', 'left_shoulder_pitch_link', 'left_shoulder_roll_link', 'left_shoulder_yaw_link', 'left_elbow_link', 'left_arm_end_effector', 'right_shoulder_pitch_link', 'right_shoulder_roll_link', 'right_shoulder_yaw_link', 'right_elbow_link', 'right_arm_end_effector'],
     dof_names=['left_hip_yaw_joint', 'left_hip_roll_joint', 'left_hip_pitch_joint', 'left_knee_joint', 'left_ankle_joint', 'right_hip_yaw_joint', 'right_hip_roll_joint', 'right_hip_pitch_joint', 'right_knee_joint', 'right_ankle_joint', 'torso_joint', 'left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint', 'left_elbow_joint', 'right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint', 'right_elbow_joint'],
     dof_body_ids=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+    joint_axis=['z', 'x', 'y', 'y', 'y', 'z', 'x', 'y', 'y', 'y', 'z', 'y', 'x', 'z', 'y', 'y', 'x', 'z', 'y'],
     dof_obs_size=114,  # 19 joints * 6 (pos, vel, etc.)
     number_of_actions=19,
     self_obs_max_coords_size=373,
@@ -40,6 +41,10 @@ robot_config = RobotConfig(
     head_body_name="head",
     key_bodies=[ "left_foot_link", "right_foot_link", "left_arm_end_effector",  "right_arm_end_effector" ],
     non_termination_contact_bodies=[ "left_foot_link", "left_ankle_link", "right_foot_link", "right_ankle_link" ],
+    dof_effort_limits=[200., 200., 200., 300., 40., 200., 200., 200., 300., 40., 200., 40., 40., 18., 18., 40., 40., 18., 18.],
+    dof_vel_limits=[23., 23., 23., 14., 9., 23., 23., 23., 14., 9., 23., 9., 9., 20., 20., 9., 9., 20., 20.],
+    dof_armatures=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+    dof_joint_frictions=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     asset=robot_asset_config,
     init_state=InitState(
         pos=[0.0, 0.0, 1.0],
@@ -63,11 +68,6 @@ robot_config = RobotConfig(
             "right_shoulder_roll_joint": 0.0,
             "right_shoulder_yaw_joint": 0.0,
             "right_elbow_joint": 0.0,
-            "head": 0.0,
-            "left_arm_end_effector_joint": 0.0,
-            "right_arm_end_effector_joint": 0.0,
-            "left_foot_link": 0.0,
-            "right_foot_link": 0.0,
         },
     ),
     control=ControlConfig(

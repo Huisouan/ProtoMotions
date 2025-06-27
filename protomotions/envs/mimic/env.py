@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 from typing import Dict, Optional
 
 import torch
@@ -362,12 +334,11 @@ class Mimic(BaseEnv):
         )
         ref_gt = ref_state.rigid_body_pos
         ref_gr = ref_state.rigid_body_rot
-        ref_lr = ref_state.local_rot
         ref_gv = ref_state.rigid_body_vel
         ref_gav = ref_state.rigid_body_ang_vel
         ref_dv = ref_state.dof_vel
 
-        ref_lr = ref_lr[:, self.simulator.get_dof_body_ids()]
+        ref_lr = dof_to_local(ref_state.dof_pos, self.simulator.robot_config.dof_offsets, self.simulator.robot_config.joint_axis, True)
         ref_kb = self.process_kb(ref_gt, ref_gr)
 
         current_state = self.simulator.get_bodies_state()
@@ -409,7 +380,7 @@ class Mimic(BaseEnv):
         ref_rav = ref_gav[:, 0]
 
         dof_state = self.simulator.get_dof_state()
-        lr = dof_to_local(dof_state.dof_pos, self.simulator.get_dof_offsets(), True)
+        lr = dof_to_local(dof_state.dof_pos, self.simulator.robot_config.dof_offsets, self.simulator.robot_config.joint_axis, True)
 
         if self.config.mimic_reward_config.add_rr_to_lr:
             rr = gr[:, 0]
@@ -568,10 +539,10 @@ class Mimic(BaseEnv):
         ref_state = self.motion_lib.get_motion_state(target_ids, target_times)
 
         target_local_rot = dof_to_local(
-            ref_state.dof_pos, self.simulator.get_dof_offsets(), True
+            ref_state.dof_pos, self.simulator.robot_config.dof_offsets, self.simulator.robot_config.joint_axis, True
         )
         residual_actions_as_quats = dof_to_local(
-            residual_actions, self.simulator.get_dof_offsets(), True
+            residual_actions, self.simulator.robot_config.dof_offsets, self.simulator.robot_config.joint_axis, True
         )
 
         actions_as_quats = rotations.quat_mul(

@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 import torch
 
 import isaaclab.sim as sim_utils
@@ -364,8 +336,9 @@ class IsaacLabSimulator(Simulator):
         """
         Apply PD control by converting actions into PD targets and updating joint targets accordingly.
         """
-        pd_tar = self._action_to_pd_targets(self._actions)
-        self._robot.set_joint_position_target(pd_tar, joint_ids=None)
+        common_pd_tar = self._action_to_pd_targets(self._common_actions)
+        isaaclab_pd_tar = common_pd_tar[:, self.data_conversion.dof_convert_to_sim]
+        self._robot.set_joint_position_target(isaaclab_pd_tar, joint_ids=None)
 
     def _apply_motor_forces(self) -> None:
         """
@@ -374,8 +347,9 @@ class IsaacLabSimulator(Simulator):
         Raises:
             NotImplementedError: Not supported yet.
         """
-        torques = self._compute_torques(self._actions)
-        self._robot.set_joint_effort_target(torques, joint_ids=None)
+        common_torques = self._compute_torques(self._common_actions)
+        isaaclab_torques = common_torques[:, self.data_conversion.dof_convert_to_sim]
+        self._robot.set_joint_effort_target(isaaclab_torques, joint_ids=None)
 
     def _set_simulator_env_state(
         self, new_states: RobotState, env_ids: Optional[torch.Tensor]
@@ -833,6 +807,3 @@ class IsaacLabSimulator(Simulator):
                 orientations=markers_state_item.orientation.view(-1, 4),
                 scales=marker_dict.scale,
             )
-
-
-#class IsaacLabvisionSimulator(IsaacLabSimulator):

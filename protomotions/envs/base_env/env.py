@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 from enum import Enum
 from typing import Optional
 
@@ -47,13 +19,8 @@ from protomotions.envs.base_env.components.humanoid_obs import HumanoidObs
 from protomotions.envs.base_env.components.terrain_obs import TerrainObs
 from protomotions.envs.base_env.components.motion_manager import MotionManager
 
-
-
-
 from protomotions.utils.motion_lib import MotionLib
 from protomotions.utils.scene_lib import SceneLib
-
-
 
 class BaseEnv:
     class StateInit(Enum):
@@ -126,7 +93,6 @@ class BaseEnv:
         self.init_done = False
 
         # Buffers
-        
         self.self_obs_cb = HumanoidObs(self.config.humanoid_obs, self)
         self.terrain_obs_cb = TerrainObs(self.config.terrain.config, self)
 
@@ -315,9 +281,6 @@ class BaseEnv:
 
         self.compute_observations()
         self.compute_reward()
-        self.compute_regulation_rewards()
-        
-        
         if not self.disable_reset:
             self.compute_reset()
 
@@ -359,17 +322,6 @@ class BaseEnv:
         self.rew_buf[:] = torch.ones(
             self.num_envs, dtype=torch.float, device=self.device
         )
-
-    def compute_regulation_rewards(self):
-        current_state = self.simulator.
-        
-        
-        
-        
-        
-        
-        #TODO
-        pass
 
     ###############################################################
     # Handle Resets
@@ -601,7 +553,7 @@ class BaseEnv:
         head_term_height = self.config.head_termination_height
         termination_height = self.config.termination_height
 
-        termination_heights = np.array([termination_height] * self.simulator.get_num_bodies())
+        termination_heights = np.array([termination_height] * self.simulator.robot_config.num_bodies)
 
         head_id = self.config.robot.body_names.index(self.config.robot.head_body_name)
 
@@ -700,13 +652,20 @@ class BaseEnv:
         self.sync_motion_just_reset[wrapped_motions] = True
 
     def instantiate_motion_lib(self):
-        motion_lib: MotionLib = instantiate(
-            self.config.motion_lib,
-            dof_body_ids=self.simulator.get_dof_body_ids(),
-            dof_offsets=self.simulator.get_dof_offsets(),
+        # CT hack: we do not use hydra.instantiate here because we need to pass the robot_config
+        # the robot_config can not be parsed by OmegaConf/Hydra, which causes a failure.
+        MotionLibClass = get_class(self.config.motion_lib._target_)
+        motion_lib_params = {}
+        for key, value in self.config.motion_lib.items():
+            if key != "_target_":
+                motion_lib_params[key] = value
+
+        motion_lib: MotionLib = MotionLibClass(
+            robot_config=self.simulator.robot_config,
             key_body_ids=self.key_body_ids,
             device=self.device,
             skeleton_tree=None,
+            **motion_lib_params
         )
         return motion_lib
 

@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 import torch
 from torch import Tensor
 import logging
@@ -77,8 +49,7 @@ class MaskedMimicNoVae(PPO):
             checkpoint_path = self.config.expert_model_path + "/score_based.ckpt"
             if not Path(checkpoint_path).exists():
                 checkpoint_path = self.config.expert_model_path + "/last.ckpt"
-            pre_trained_expert = torch.load(checkpoint_path)
-
+            
             self.expert_model_config = OmegaConf.load(
                 Path(self.config.expert_model_path) / "config.yaml"
             )
@@ -100,6 +71,8 @@ class MaskedMimicNoVae(PPO):
             self.expert_model = self.fabric.setup(expert_model)
             self.expert_model.mark_forward_method("act")
 
+            # loading should be done after fabric.setup to ensure the model is on the correct fabric.device
+            pre_trained_expert = torch.load(checkpoint_path, map_location=self.fabric.device) 
             self.expert_model.load_state_dict(pre_trained_expert["model"])
             for param in self.expert_model.parameters():
                 param.requires_grad = False

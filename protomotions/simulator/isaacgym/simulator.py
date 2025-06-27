@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 import sys
 from isaacgym import gymapi, gymtorch, gymutil  # type: ignore[misc]
 import torch
@@ -966,15 +938,17 @@ class IsaacGymSimulator(Simulator):
 
     # ===== Group 5: Control & Computation Methods =====
     def _apply_pd_control(self) -> None:
-        pd_tar = self._action_to_pd_targets(self._actions)
-        pd_tar_tensor = gymtorch.unwrap_tensor(pd_tar)
+        common_pd_tar = self._action_to_pd_targets(self._common_actions)
+        isaacgym_pd_tar = common_pd_tar[:, self.data_conversion.dof_convert_to_sim]
+        pd_tar_tensor = gymtorch.unwrap_tensor(isaacgym_pd_tar)
         self._gym.set_dof_position_target_tensor(self._sim, pd_tar_tensor)
 
     def _apply_motor_forces(self) -> None:
-        torques = self._compute_torques(self._actions)
-        torques_tensor = gymtorch.unwrap_tensor(torques)
+        common_torques = self._compute_torques(self._common_actions)
+        isaacgym_torques = common_torques[:, self.data_conversion.dof_convert_to_sim]
+        torques_tensor = gymtorch.unwrap_tensor(isaacgym_torques)
         self._gym.set_dof_actuation_force_tensor(self._sim, torques_tensor)
-        
+
     def _push_robot(self):
         forces = torch.zeros((1, self._rigid_body_state.shape[0], 3), device=self.device, dtype=torch.float)
         torques = torch.zeros((1, self._rigid_body_state.shape[0], 3), device=self.device, dtype=torch.float)

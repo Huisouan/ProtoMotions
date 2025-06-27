@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -92,7 +64,6 @@ class RobotState:
     rigid_body_vel: Optional[torch.Tensor] = None
     rigid_body_ang_vel: Optional[torch.Tensor] = None
     key_body_pos: Optional[torch.Tensor] = None
-    local_rot: Optional[torch.Tensor] = None
 
     @staticmethod
     def from_dict(data: Dict[str, torch.Tensor]) -> "RobotState":
@@ -120,7 +91,6 @@ class RobotState:
             rigid_body_vel=data.get("rigid_body_vel", None),
             rigid_body_ang_vel=data.get("rigid_body_ang_vel", None),
             key_body_pos=data.get("key_body_pos", None),
-            local_rot=data.get("local_rot", None),
         )
 
     def to_dict(self) -> Dict[str, torch.Tensor]:
@@ -153,8 +123,6 @@ class RobotState:
             data["rigid_body_ang_vel"] = self.rigid_body_ang_vel
         if self.key_body_pos is not None:
             data["key_body_pos"] = self.key_body_pos
-        if self.local_rot is not None:
-            data["local_rot"] = self.local_rot
         return data 
 
     def convert_to_common(self, conversion: DataConversion) -> "RobotState":
@@ -186,13 +154,6 @@ class RobotState:
         new_rigid_body_vel = self.rigid_body_vel[:, conversion.body_convert_to_common] if self.rigid_body_vel is not None else None
         new_rigid_body_ang_vel = self.rigid_body_ang_vel[:, conversion.body_convert_to_common] if self.rigid_body_ang_vel is not None else None
 
-        new_local_rot = None
-        if self.local_rot is not None:
-            lr = self.local_rot
-            if not conversion.sim_w_last:
-                lr = rotations.wxyz_to_xyzw(lr)
-            new_local_rot = lr[:, conversion.body_convert_to_common[1:]]  # Skip root rotation in local frame
-            
         return RobotState(
             root_pos=self.root_pos,
             root_rot=new_root_rot,
@@ -205,7 +166,6 @@ class RobotState:
             rigid_body_vel=new_rigid_body_vel,
             rigid_body_ang_vel=new_rigid_body_ang_vel,
             key_body_pos=self.key_body_pos,
-            local_rot=new_local_rot,
         )
 
     def convert_to_sim(self, conversion: DataConversion) -> "RobotState":
@@ -236,13 +196,6 @@ class RobotState:
         new_rigid_body_vel = self.rigid_body_vel[:, conversion.body_convert_to_sim] if self.rigid_body_vel is not None else None
         new_rigid_body_ang_vel = self.rigid_body_ang_vel[:, conversion.body_convert_to_sim] if self.rigid_body_ang_vel is not None else None
 
-        new_local_rot = None
-        if self.local_rot is not None:
-            lr = self.local_rot[:, conversion.body_convert_to_sim[1:]]
-            if not conversion.sim_w_last:
-                lr = rotations.xyzw_to_wxyz(lr)
-            new_local_rot = lr
-            
         return RobotState(
             root_pos=self.root_pos,
             root_rot=new_root_rot,
@@ -255,5 +208,4 @@ class RobotState:
             rigid_body_vel=new_rigid_body_vel,
             rigid_body_ang_vel=new_rigid_body_ang_vel,
             key_body_pos=self.key_body_pos,
-            local_rot=new_local_rot,
-        ) 
+        )

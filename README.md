@@ -1,5 +1,4 @@
 # ProtoMotions: Physics-based Character Animation
-
 *“Primitive or fundamental types of movement that serve as a basis for more complex motions.”*
 
 - [What is this?](#what-is-this)
@@ -66,7 +65,6 @@ First run `git lfs fetch --all` to fetch all files stored in git-lfs.
 <summary>IsaacGym</summary>
 
 1. Install [IsaacGym](https://developer.nvidia.com/isaac-gym)
-
 ```bash
 wget https://developer.nvidia.com/isaac-gym-preview-4
 tar -xvzf isaac-gym-preview-4
@@ -77,18 +75,14 @@ Install IsaacGym Python API:
 ```bash
 pip install -e isaacgym/python
 ```
-
 2. Once IG and PyTorch are installed, from the repository root install the ProtoMotions package and its dependencies with:
-
 ```bash
 pip install -e .
 pip install -r requirements_isaacgym.txt
 pip install -e isaac_utils
 pip install -e poselib
 ```
-
 Set the `PYTHON_PATH` env variable (not really needed, but helps the instructions stay consistent between sim and gym).
-
 ```bash
 alias PYTHON_PATH=python
 ```
@@ -111,14 +105,11 @@ If you run into memory issues -- try reducing the number of environments by addi
 1. Install [IsaacLab](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html)
 2. Once IsaacLab is installed, from the repository root install the ProtoMotions package and its dependencies with:
 3. Set `PYTHON_PATH` to point at the `isaaclab.sh` script
-
 ```bash
 For Linux: alias PYTHON_PATH="<isaac_lab_path> -p"
 # For example: alias PYTHON_PATH="/home/USERNAME/IsaacLab/isaaclab.sh -p"
 ```
-
 4. Once IsaacLab is installed, from the protomotions repository root, install the Physical Animation package and its dependencies with:
-
 ```bash
 PYTHON_PATH -m pip install -e .
 PYTHON_PATH -m pip install -r requirements_isaaclab.txt
@@ -132,16 +123,13 @@ PYTHON_PATH -m pip install -e poselib
 
 1. Install [Genesis](https://genesis-world.readthedocs.io/en/latest/index.html), install using **python 3.10**.
 2. Once Genesis is installed, from the repository root install the ProtoMotions package and its dependencies with:
-
 ```bash
 pip install -e .
 pip install -r requirements_genesis.txt
 pip install -e isaac_utils
 pip install -e poselib
 ```
-
 Set the `PYTHON_PATH` env variable (not really needed, but helps the instructions stay consistent between sim and gym).
-
 ```bash
 alias PYTHON_PATH=python
 ```
@@ -152,12 +140,9 @@ alias PYTHON_PATH=python
 
 A set of example scripts are provided in the `examples` folder. These present a simple and contained reference for how to use the framework's components.
 
-The simplest example for training an agent is:
-
+The simplest example for training an agent on the steering task is:
 ```bash
-python protomotions/train_agent.py +exp=steering_mlp +robot=h1 +simulator=isaacgym +experiment_name=h1_steering
-
-python protomotions/eval_agent.py +robot=h1 +simulator=isaacgym +"checkpoint=results/h1_steering/last.ckpt"
+PYTHON_PATH protomotions/train_agent.py +exp=steering_mlp +robot=h1 +simulator=<simulator> +experiment_name=h1_steering
 ```
 
 <div float="center">
@@ -175,13 +160,12 @@ The `experiment_name` determines where all the experiment results and parameters
 If you are using IsaacGym use the flag `+simulator=isaacgym`. For IsaacLab use `+simulator=isaaclab`. For Genesis use `+simulator=genesis`.
 Then select the robot you are training. For example, the SMPL humanoid robot is `+robot=smpl`. The code currently supports:
 
-
-| Robot            | Description                                                                                     |
-| ---------------- | ----------------------------------------------------------------------------------------------- |
-| smpl             | SMPL humanoid                                                                                   |
-| smplx            | SMPL-X humanoid                                                                                 |
-| amp              | Adversarial Motion Priors humanoid                                                              |
-| sword_and_shield | ASE sword and shield character                                                                  |
+| Robot            | Description                                                               |
+|------------------|---------------------------------------------------------------------------|
+| smpl             | SMPL humanoid                                                             |
+| smplx            | SMPL-X humanoid                                                           |
+| amp              | Adversarial Motion Priors humanoid                                        |
+| sword_and_shield | ASE sword and shield character                                            |
 | h1               | Unitree H1 humanoid with arm-stub (where the hand connects), toes, and head joints made visible |
 
 ## Provided Algorithms
@@ -205,7 +189,6 @@ add `+terrain=flat` to use a default flat terrain (this reduces loading time).
 <summary>Full body motion tracking (Advanced DeepMimic)</summary>
 
 This model is the first stage in training MaskedMimic. Refer to the MaskedMimic section for instructions on training this model.
-
 </details>
 
 <details>
@@ -223,7 +206,7 @@ task with the provided motions.
 ### Path Following
 
 One such task for AMP is path following. The character needs to follow a set of markers.
-To provide AMP with a path following task, similar to
+To provide AMP with a path following task, similar to 
 [PACER](https://research.nvidia.com/labs/toronto-ai/trace-pace/), run the experiment `+exp=path_follower_amp_mlp`.
 
 </details>
@@ -239,11 +222,9 @@ dataset of motions, as opposed to AMP that can (and often should) be trained on 
 Run `PYTHON_PATH protomotions/train_agent.py +exp=ase_mlp motion_file=<path to motion dataset>`
 
 In order to train the sword-and-shield character, as in the original paper:
-
 1. Download the data from [ASE](https://github.com/nv-tlabs/ASE)
 2. Point the `motion_file` path to the dataset descriptor file `dataset_reallusion_sword_shield.yaml` (from the ASE codebase)
 3. Use the robot `+robot=sword_and_shield`
-
 </details>
 
 ## Terrain
@@ -276,16 +257,15 @@ To evaluate the trained agent, run `PYTHON_PATH protomotions/eval_agent.py +robo
 
 We provide a set of pre-defined keyboard controls.
 
-
 | Key | Description                                                                |
-| --- | -------------------------------------------------------------------------- |
+|-----|----------------------------------------------------------------------------|
 | `J` | Apply physical force to all robots (tests robustness)                      |
 | `R` | Reset the task                                                             |
 | `O` | Toggle camera. Will cycle through all entities in the scene.               |
 | `L` | Toggle recording video from viewer. Second click will save frames to video |
 | `;` | Cancel recording                                                           |
 | `U` | Update inference parameters (e.g., in MaskedMimic user control task)       |
-| `Q` | Quit                                                                       |
+| `Q` | Quit       |
 
 ## Configurations
 
@@ -297,7 +277,6 @@ For example, see the MaskedMimic configurations under the experiment folder.
 Training the agents requires using mocap data. The `motion_file` parameter receives either an `.npy` file, for a single motion, or a `.yaml` for an entire dataset of motions.
 
 We provide example motions to get you started:
-
 - AMP humanoid: `data/motions/amp_humanoid_walk.npy`
 - AMP + sword and shield humanoid: `data/motions/amp_sword_and_shield_humanoid_walk.npy`
 - SMPL humanoid: `data/motions/smpl_humanoid_walk.npy`
@@ -305,7 +284,6 @@ We provide example motions to get you started:
 - H1 (with head, toes, and arm-stubs): `data/motions/h1_walk.npy`
 
 The data processing pipeline follows the following procedure:
-
 1. Download the data.
 2. Convert AMASS to Isaac (PoseLib) format.
 3. Create a YAML file with the data information (filename, FPS, textual labels, etc...).
@@ -313,23 +291,21 @@ The data processing pipeline follows the following procedure:
 
 Motions can be visualized via kinematic replay by running `PYTHON_PATH protomotions/scripts/play_motion.py <motion file> <simulator isaacgym/isaaclab/genesis> <robot type>`.
 
-## Download Data
 
-1. Download the [SMPL](https://smpl.is.tue.mpg.de/) v1.1.0 parameters and place them in the `data/smpl/` folder. Rename the files basicmodel_neutral_lbs_10_207_0_v1.1.0, basicmodel_m_lbs_10_207_0_v1.1.0.pkl, basicmodel_f_lbs_10_207_0_v1.1.0.pkl to SMPL_NEUTRAL.pkl, SMPL_MALE.pkl and SMPL_FEMALE.pkl.
-2. Download the [SMPL-X](https://smpl-x.is.tue.mpg.de/) v1.1 parameters and place them in the `data/smpl/` folder. Rename the files to SMPLX_NEUTRAL.pkl, SMPLX_MALE.pkl and SMPLX_FEMALE.pkl.
+## Download Data
+1. Download the [SMPL](https://smpl.is.tue.mpg.de/) v1.1.0 parameters and place them in the `data/smpl/` folder. Rename the files basicmodel_neutral_lbs_10_207_0_v1.1.0, basicmodel_m_lbs_10_207_0_v1.1.0.pkl, basicmodel_f_lbs_10_207_0_v1.1.0.pkl to SMPL_NEUTRAL.pkl, SMPL_MALE.pkl and SMPL_FEMALE.pkl. 
+2. Download the [SMPL-X](https://smpl-x.is.tue.mpg.de/) v1.1 parameters and place them in the `data/smpl/` folder. Rename the files to SMPLX_NEUTRAL.pkl, SMPLX_MALE.pkl and SMPLX_FEMALE.pkl. 
 3. Download the [AMASS](https://amass.is.tue.mpg.de/) dataset.
 
 ## Convert the motions to MotionLib format
 
 Run `python data/scripts/convert_amass_to_isaac.py <path_to_AMASS_data>`.
-
 - If using SMPL-X data, set `--humanoid-type=smplx`.
 - To retarget to the Unitree H1, set `--robot-type=h1` and `--force-retarget`. This will use [Mink](https://github.com/kevinzakka/mink/) for retargeting the motions.
 
 ## YAML files
 
 You can create your own YAML files for full-control over the process.
-
 <details>
 <summary>Create your own YAML files</summary>
 Example pre-generated YAML files are provided in `data/yaml_files`. To create your own YAML file, follow these steps:
@@ -344,14 +320,12 @@ Example pre-generated YAML files are provided in `data/yaml_files`. To create yo
 Alternatively, you can use the pre-generated YAML files in `data/yaml_files`.
 
 ## Package the data for faster loading
-
 Run `python data/scripts/package_motion_lib.py <path_to_yaml_file> <path_to_AMASS_data_dir> <output_pt_file_path>` set `--humanoid-type=smplx` if using SMPL-X. Add the flag `--create-text-embeddings` to create text embeddings (for MaskedMimic).
 
 # Citation
 
 This codebase builds upon prior work from NVIDIA and external collaborators. Please adhere to the relevant licensing in the respective repositories.
 If you use this code in your work, please consider citing our works:
-
 ```bibtex
 @misc{ProtoMotions,
   title = {ProtoMotions: Physics-based Character Animation},
@@ -380,7 +354,6 @@ If you use this code in your work, please consider citing our works:
 ```
 
 Also consider citing these prior works that helped contribute to this project:
-
 ```bibtex
 @inproceedings{juravsky2024superpadl,
   title={SuperPADL: Scaling Language-Directed Physics-Based Control with Progressive Supervised Distillation},
@@ -403,7 +376,7 @@ Also consider citing these prior works that helped contribute to this project:
     title={Perpetual Humanoid Control for Real-time Simulated Avatars},
     booktitle={International Conference on Computer Vision (ICCV)},
     year={2023}
-}          
+}            
 
 @inproceedings{rempeluo2023tracepace,
     author={Rempe, Davis and Luo, Zhengyi and Peng, Xue Bin and Yuan, Ye and Kitani, Kris and Kreis, Karsten and Fidler, Sanja and Litany, Or},
@@ -422,9 +395,7 @@ Also consider citing these prior works that helped contribute to this project:
 ```
 
 # References and Thanks
-
-This project repository builds upon the shoulders of giants.
-
+This project repository builds upon the shoulders of giants. 
 * [IsaacGymEnvs](https://github.com/isaac-sim/IsaacGymEnvs) for reference IsaacGym code. For example, terrain generation code.
 * [OmniIsaacGymEnvs](https://github.com/isaac-sim/OmniIsaacGymEnvs) for reference IsaacSim code.
 * [DeepMimic](https://github.com/xbpeng/DeepMimic) our full body tracker (Mimic) can be seen as a direct extension of DeepMimic.
@@ -438,13 +409,10 @@ This project repository builds upon the shoulders of giants.
 * [Mink](https://github.com/kevinzakka/mink/) and Kevin Zakka for help with the retargeting.
 
 The following people have contributed to this project:
-
 * Chen Tessler, Yifeng Jiang, Xue Bin Peng, Erwin Coumans, Kelly Guo, and Jordan Juravsky.
 
 # Dependencies
-
 This project uses the following packages:
-
 * PyTorch, [LICENSE](https://github.com/pytorch/pytorch/blob/main/LICENSE)
 * PyTorch Lightning, [LICENSE](https://github.com/Lightning-AI/pytorch-lightning/blob/master/LICENSE)
 * IsaacGym, [LICENSE](https://developer.download.nvidia.com/isaac/NVIDIA_Isaac_Gym_Pre-Release_Evaluation_EULA_19Oct2020.pdf)

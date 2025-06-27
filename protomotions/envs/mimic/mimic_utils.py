@@ -1,31 +1,3 @@
-# Copyright (c) 2018-2022, NVIDIA Corporation
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 import torch
 from torch import Tensor
 from typing import List, Dict
@@ -146,7 +118,7 @@ def exp_tracking_reward(
 
 
 @torch.jit.script
-def dof_to_local(pose: Tensor, dof_offsets: List[int], w_last: bool) -> Tensor:
+def dof_to_local(pose: Tensor, dof_offsets: List[int], joint_axis: List[str], w_last: bool) -> Tensor:
     """Convert degrees of freedom (DoF) representation to local rotations.
 
     Args:
@@ -174,11 +146,18 @@ def dof_to_local(pose: Tensor, dof_offsets: List[int], w_last: bool) -> Tensor:
         if dof_size == 3:  # Spherical joint (3 DoF)
             joint_quat = torch_utils.exp_map_to_quat(joint_pose, w_last)
         elif dof_size == 1:  # Revolute joint (1 DoF)
-            y_axis = torch.tensor(
-                [0.0, 1.0, 0.0], dtype=joint_pose.dtype, device=pose.device
+            configured_joint_axis = joint_axis[joint_idx]
+            axis = torch.tensor(
+                [0.0, 0.0, 0.0], dtype=joint_pose.dtype, device=pose.device
             )
+            if configured_joint_axis == "x":
+                axis[0] = 1.0
+            elif configured_joint_axis == "y":
+                axis[1] = 1.0
+            elif configured_joint_axis == "z":
+                axis[2] = 1.0
             joint_quat = rotations.quat_from_angle_axis(
-                joint_pose[..., 0], y_axis, w_last
+                joint_pose[..., 0], axis, w_last
             )
         else:
             raise ValueError(f"Unsupported joint type with {dof_size} DoF")
